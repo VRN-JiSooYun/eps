@@ -12,4 +12,4 @@ tmp/
 frontend/vite.config.js
 frontend/vite.config.d.ts
 
-./eps-server
+eps-server
