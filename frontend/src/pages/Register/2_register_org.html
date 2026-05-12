@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="ko"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>공급업체등록 - 공급업체정보 입력</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#F25C22",
+                        "background-light": "#ffffff",
+                        "background-dark": "#121212",
+                        "surface-light": "#f9fafb",
+                        "surface-dark": "#1e1e1e",
+                        "border-light": "#e5e7eb",
+                        "border-dark": "#374151",
+                        "text-main-light": "#111827",
+                        "text-main-dark": "#f9fafb",
+                        "text-muted-light": "#6b7280",
+                        "text-muted-dark": "#9ca3af"
+                    },
+                    fontFamily: {
+                        display: ["'Noto Sans KR'", "sans-serif"],
+                    },
+                    borderRadius: {
+                        DEFAULT: "0.375rem",
+                    },
+                },
+            },
+        };
+    </script>
+<style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-text-main-light dark:text-text-main-dark min-h-screen antialiased">
+<div class="max-w-6xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+<div class="mb-10">
+<h1 class="text-3xl font-bold text-text-main-light dark:text-text-main-dark mb-8">공급업체등록</h1>
+<div class="border-b border-border-light dark:border-border-dark flex overflow-x-auto">
+<div class="flex-1 py-4 px-6 flex items-center justify-center space-x-3 text-text-muted-light dark:text-text-muted-dark min-w-max">
+<span class="w-8 h-8 rounded-full bg-surface-light dark:bg-border-dark flex items-center justify-center font-medium">1</span>
+<span class="font-medium text-lg">개인정보 수집이용 동의</span>
+</div>
+<div class="flex-1 py-4 px-6 flex items-center justify-center space-x-3 bg-[#fdf2ee] dark:bg-[#3a1b11] border-b-4 border-primary min-w-max">
+<span class="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center font-medium">2</span>
+<span class="font-medium text-lg text-primary">공급업체정보 입력</span>
+</div>
+<div class="flex-1 py-4 px-6 flex items-center justify-center space-x-3 text-text-muted-light dark:text-text-muted-dark min-w-max">
+<span class="w-8 h-8 rounded-full bg-surface-light dark:bg-border-dark flex items-center justify-center font-medium">3</span>
+<span class="font-medium text-lg">담당자정보 입력</span>
+</div>
+<div class="flex-1 py-4 px-6 flex items-center justify-center space-x-3 text-text-muted-light dark:text-text-muted-dark min-w-max">
+<span class="w-8 h-8 rounded-full bg-surface-light dark:bg-border-dark flex items-center justify-center font-medium">4</span>
+<span class="font-medium text-lg">공급업체 등록완료</span>
+</div>
+</div>
+</div>
+<div class="mt-12">
+<div class="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-8 mb-12">
+<div>
+<label class="block text-base font-medium text-text-main-light dark:text-text-main-dark mb-2">
+                        업체명 <span class="text-primary">*</span>
+</label>
+<input class="w-full px-4 py-3 bg-white dark:bg-surface-dark border border-border-light dark:border-border-dark rounded focus:ring-primary focus:border-primary text-text-main-light dark:text-text-main-dark outline-none transition-colors" type="text"/>
+</div>
+<div>
+<label class="block text-base font-medium text-text-main-light dark:text-text-main-dark mb-2">
+                        사업자등록번호 <span class="text-primary">*</span>
+</label>
+<input class="w-full px-4 py-3 bg-white dark:bg-surface-dark border border-border-light dark:border-border-dark rounded focus:ring-primary focus:border-primary text-text-main-light dark:text-text-main-dark outline-none transition-colors" type="text"/>
+</div>
+<div>
+<label class="block text-base font-medium text-text-main-light dark:text-text-main-dark mb-2">
+                        본사전화번호 <span class="text-primary">*</span>
+</label>
+<input class="w-full px-4 py-3 bg-white dark:bg-surface-dark border border-border-light dark:border-border-dark rounded focus:ring-primary focus:border-primary text-text-main-light dark:text-text-main-dark outline-none transition-colors" type="text"/>
+</div>
+<div>
+<label class="block text-base font-medium text-text-main-light dark:text-text-main-dark mb-2">
+                        거래은행 <span class="text-primary">*</span>
+</label>
+<div class="relative">
+<select class="w-full px-4 py-3 bg-white dark:bg-surface-dark border border-border-light dark:border-border-dark rounded appearance-none focus:ring-primary focus:border-primary text-text-main-light dark:text-text-main-dark outline-none transition-colors pr-10">
+<option value=""></option>
+<option value="bank1">은행 1</option>
+<option value="bank2">은행 2</option>
+</select>
+<div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-text-muted-light dark:text-text-muted-dark">
+<span class="material-icons text-lg">arrow_drop_down</span>
+</div>
+</div>
+</div>
+<div>
+<label class="block text-base font-medium text-text-main-light dark:text-text-main-dark mb-2">
+                        예금주 <span class="text-primary">*</span>
+</label>
+<input class="w-full px-4 py-3 bg-white dark:bg-surface-dark border border-border-light dark:border-border-dark rounded focus:ring-primary focus:border-primary text-text-main-light dark:text-text-main-dark outline-none transition-colors" type="text"/>
+</div>
+<div>
+<label class="block text-base font-medium text-text-main-light dark:text-text-main-dark mb-2">
+                        계좌번호 <span class="text-primary">*</span>
+</label>
+<input class="w-full px-4 py-3 bg-white dark:bg-surface-dark border border-border-light dark:border-border-dark rounded focus:ring-primary focus:border-primary text-text-main-light dark:text-text-main-dark outline-none transition-colors" type="text"/>
+</div>
+<div>
+<label class="block text-base font-medium text-text-main-light dark:text-text-main-dark mb-2">
+                        비밀번호 <span class="text-primary">*</span>
+</label>
+<input class="w-full px-4 py-3 bg-white dark:bg-surface-dark border border-border-light dark:border-border-dark rounded focus:ring-primary focus:border-primary text-text-main-light dark:text-text-main-dark outline-none transition-colors" type="password"/>
+</div>
+<div>
+<label class="block text-base font-medium text-text-main-light dark:text-text-main-dark mb-2">
+                        비밀번호 확인 <span class="text-primary">*</span>
+</label>
+<input class="w-full px-4 py-3 bg-white dark:bg-surface-dark border border-border-light dark:border-border-dark rounded focus:ring-primary focus:border-primary text-text-main-light dark:text-text-main-dark outline-none transition-colors" type="password"/>
+</div>
+</div>
+<div class="mb-12">
+<div class="mb-4">
+<h3 class="text-lg font-medium text-text-main-light dark:text-text-main-dark">첨부파일</h3>
+<p class="text-sm text-text-muted-light dark:text-text-muted-dark mt-1">※ 사업자등록증, 통장사본 필수 제출</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+<div class="border-2 border-dashed border-border-light dark:border-border-dark rounded-lg p-10 bg-surface-light dark:bg-surface-dark flex flex-col items-center justify-center text-center">
+<span class="material-icons text-4xl text-border-dark dark:text-border-light mb-4 transform -rotate-45">attach_file</span>
+<p class="text-text-main-light dark:text-text-main-dark font-medium mb-1">사업자등록증</p>
+<p class="text-text-muted-light dark:text-text-muted-dark text-sm mb-6">pdf, jpg, png 첨부 가능</p>
+<button class="px-6 py-2 bg-[#555555] dark:bg-[#777777] hover:bg-[#444444] dark:hover:bg-[#666666] text-white rounded transition-colors text-sm font-medium">
+                            파일 가져오기
+                        </button>
+</div>
+<div class="border-2 border-dashed border-border-light dark:border-border-dark rounded-lg p-10 bg-surface-light dark:bg-surface-dark flex flex-col items-center justify-center text-center">
+<span class="material-icons text-4xl text-border-dark dark:text-border-light mb-4 transform -rotate-45">attach_file</span>
+<p class="text-text-main-light dark:text-text-main-dark font-medium mb-1">통장사본</p>
+<p class="text-text-muted-light dark:text-text-muted-dark text-sm mb-6">pdf, jpg, png 첨부 가능</p>
+<button class="px-6 py-2 bg-[#555555] dark:bg-[#777777] hover:bg-[#444444] dark:hover:bg-[#666666] text-white rounded transition-colors text-sm font-medium">
+                            파일 가져오기
+                        </button>
+</div>
+</div>
+</div>
+<div class="flex justify-end pt-6 border-t border-border-light dark:border-border-dark mt-8">
+<button class="flex items-center px-8 py-3 bg-primary hover:bg-[#d94a15] text-white rounded font-medium text-lg transition-colors">
+                    다음 <span class="material-icons ml-2 text-base">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+
+</body></html>

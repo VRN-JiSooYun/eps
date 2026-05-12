@@ -1,6 +1,8 @@
 import { FormEvent, ReactNode, useEffect, useMemo, useState } from "react";
 import { Bell, ClipboardList, LogOut } from "lucide-react";
-import { listPendingQuoteRequests, login, register } from "./api";
+import { BrowserRouter, Navigate, Route, Routes, useNavigate } from "react-router-dom";
+import { listPendingQuoteRequests, login } from "./api";
+import Register from "./pages/Register";
 import type { AuthResponse, QuoteRequest, Supplier } from "./types";
 
 const tokenKey = "eps.auth.token";
@@ -8,7 +10,14 @@ const supplierKey = "eps.auth.supplier";
 const rememberedEmailKey = "eps.auth.rememberedEmail";
 
 export function App() {
-  const [mode, setMode] = useState<"login" | "register">("login");
+  return (
+    <BrowserRouter>
+      <AppRoutes />
+    </BrowserRouter>
+  );
+}
+
+function AppRoutes() {
   const [token, setToken] = useState(() => localStorage.getItem(tokenKey) ?? "");
   const [supplier, setSupplier] = useState<Supplier | null>(() => {
     const raw = localStorage.getItem(supplierKey);
@@ -17,6 +26,7 @@ export function App() {
   const [quotes, setQuotes] = useState<QuoteRequest[]>([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const navigate = useNavigate();
 
   const isAuthed = Boolean(token && supplier);
 
@@ -47,12 +57,40 @@ export function App() {
     setToken("");
     setSupplier(null);
     setQuotes([]);
+    navigate("/");
   }
 
-  if (!isAuthed) {
-    return <AuthPanel mode={mode} setMode={setMode} onAuth={saveSession} message={message} setMessage={setMessage} />;
-  }
+  return (
+    <Routes>
+      <Route
+        path="/"
+        element={
+          isAuthed && supplier ? (
+            <DashboardPage supplier={supplier} quotes={quotes} loading={loading} message={message} onLogout={clearSession} />
+          ) : (
+            <AuthPanel onRegisterClick={() => navigate("/register")} onAuth={saveSession} message={message} setMessage={setMessage} />
+          )
+        }
+      />
+      <Route path="/register" element={isAuthed ? <Navigate to="/" replace /> : <Register />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
+}
 
+function DashboardPage({
+  supplier,
+  quotes,
+  loading,
+  message,
+  onLogout
+}: {
+  supplier: Supplier;
+  quotes: QuoteRequest[];
+  loading: boolean;
+  message: string;
+  onLogout: () => void;
+}) {
   return (
     <main className="min-h-screen bg-voronoi-gray-100 text-ink">
       <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-5 py-6">
@@ -61,37 +99,30 @@ export function App() {
             <p className="text-sm font-semibold text-voronoi-orange">External Procurement System</p>
             <h1 className="text-2xl font-bold tracking-normal">EPS 공급사 포털</h1>
           </div>
-          {supplier ? (
-            <button className="icon-button" onClick={clearSession} aria-label="로그아웃" title="로그아웃">
-              <LogOut size={20} />
-            </button>
-          ) : null}
+          <button className="icon-button" onClick={onLogout} aria-label="로그아웃" title="로그아웃">
+            <LogOut size={20} />
+          </button>
         </header>
 
-        {supplier ? <Dashboard supplier={supplier} quotes={quotes} loading={loading} message={message} /> : null}
+        <Dashboard supplier={supplier} quotes={quotes} loading={loading} message={message} />
       </div>
     </main>
   );
 }
 
 function AuthPanel({
-  mode,
-  setMode,
+  onRegisterClick,
   onAuth,
   message,
   setMessage
 }: {
-  mode: "login" | "register";
-  setMode: (mode: "login" | "register") => void;
+  onRegisterClick: () => void;
   onAuth: (auth: AuthResponse) => void;
   message: string;
   setMessage: (message: string) => void;
 }) {
   const [email, setEmail] = useState(() => localStorage.getItem(rememberedEmailKey) ?? "");
   const [password, setPassword] = useState("");
-  const [companyName, setCompanyName] = useState("");
-  const [businessRegistrationNumber, setBusinessRegistrationNumber] = useState("");
-  const [privacyAgreed, setPrivacyAgreed] = useState(false);
   const [rememberEmail, setRememberEmail] = useState(() => Boolean(localStorage.getItem(rememberedEmailKey)));
   const [submitting, setSubmitting] = useState(false);
 
@@ -101,16 +132,13 @@ function AuthPanel({
     setMessage("");
 
     try {
-      if (mode === "login" && rememberEmail) {
+      if (rememberEmail) {
         localStorage.setItem(rememberedEmailKey, email);
-      } else if (mode === "login") {
+      } else {
         localStorage.removeItem(rememberedEmailKey);
       }
 
-      const auth =
-        mode === "login"
-          ? await login({ email, password })
-          : await register({ email, password, companyName, businessRegistrationNumber, privacyAgreed });
+      const auth = await login({ email, password });
       onAuth(auth);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "요청 처리에 실패했습니다.");
@@ -127,7 +155,7 @@ function AuthPanel({
             <div className="mb-8">
               <img className="h-14" src="/logos/1_vrn_ci.png"></img>
             </div>
-            <h1 className="mb-2 text-4xl font-normal tracking-normal text-black">{mode === "login" ? "Login" : "Register"}</h1>
+            <h1 className="mb-2 text-4xl font-normal tracking-normal text-black">Login</h1>
             <p className="text-lg font-bold tracking-normal text-black">보로노이 파트너 플랫폼</p>
           </header>
 
@@ -159,69 +187,27 @@ function AuthPanel({
               required
             />
 
-            {mode === "register" ? (
-              <>
-                <label className="sr-only" htmlFor="companyName">
-                  회사명
-                </label>
-                <input
-                  className="login-input"
-                  id="companyName"
-                  value={companyName}
-                  onChange={(event) => setCompanyName(event.target.value)}
-                  placeholder="회사명"
-                  required
-                />
-
-                <label className="sr-only" htmlFor="businessRegistrationNumber">
-                  사업자등록번호
-                </label>
-                <input
-                  className="login-input"
-                  id="businessRegistrationNumber"
-                  value={businessRegistrationNumber}
-                  onChange={(event) => setBusinessRegistrationNumber(event.target.value)}
-                  placeholder="사업자등록번호"
-                  required
-                />
-              </>
-            ) : null}
-
             <div className="flex items-center justify-between py-2">
-              {mode === "login" ? (
-                <label className="flex cursor-pointer items-center text-sm text-voronoi-gray-800">
-                  <input
-                    className="h-4 w-4 cursor-pointer rounded border-voronoi-gray-300 text-voronoi-orange accent-voronoi-orange focus:ring-voronoi-orange"
-                    type="checkbox"
-                    checked={rememberEmail}
-                    onChange={(event) => setRememberEmail(event.target.checked)}
-                  />
-                  <span className="ml-2">아이디 저장</span>
-                </label>
-              ) : (
-                <label className="flex cursor-pointer items-center text-sm text-voronoi-gray-800">
-                  <input
-                    className="h-4 w-4 cursor-pointer rounded border-voronoi-gray-300 text-voronoi-orange accent-voronoi-orange focus:ring-voronoi-orange"
-                    type="checkbox"
-                    checked={privacyAgreed}
-                    onChange={(event) => setPrivacyAgreed(event.target.checked)}
-                  />
-                  <span className="ml-2">개인정보 수집 및 이용에 동의합니다.</span>
-                </label>
-              )}
+              <label className="flex cursor-pointer items-center text-sm text-voronoi-gray-800">
+                <input
+                  className="h-4 w-4 cursor-pointer rounded border-voronoi-gray-300 text-voronoi-orange accent-voronoi-orange focus:ring-voronoi-orange"
+                  type="checkbox"
+                  checked={rememberEmail}
+                  onChange={(event) => setRememberEmail(event.target.checked)}
+                />
+                <span className="ml-2">아이디 저장</span>
+              </label>
 
-              {mode === "login" ? (
-                <button className="text-sm text-voronoi-gray-800 transition hover:text-voronoi-orange" type="button">
-                  비밀번호 초기화
-                </button>
-              ) : null}
+              <button className="text-sm text-voronoi-gray-800 transition hover:text-voronoi-orange" type="button">
+                비밀번호 초기화
+              </button>
             </div>
 
             {message ? <p className="rounded-md bg-voronoi-orange/10 px-3 py-2 text-sm text-voronoi-orange">{message}</p> : null}
 
             <div className="pt-2">
               <button className="login-submit" disabled={submitting}>
-                {submitting ? "처리 중" : mode === "login" ? "로그인" : "등록"}
+                {submitting ? "처리 중" : "로그인"}
               </button>
             </div>
           </form>
@@ -230,12 +216,9 @@ function AuthPanel({
             <button
               className="text-sm text-voronoi-gray-500 transition hover:text-voronoi-gray-900"
               type="button"
-              onClick={() => {
-                setMessage("");
-                setMode(mode === "login" ? "register" : "login");
-              }}
+              onClick={onRegisterClick}
             >
-              {mode === "login" ? "공급업체등록" : "로그인으로 돌아가기"}
+              공급업체등록
             </button>
           </div>
         </div>

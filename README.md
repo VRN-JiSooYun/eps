@@ -23,13 +23,17 @@ External Procurement System. For Supplier or Vendor of Voronoi Inc.
 │   │   └── utils/
 │   ├── config/
 │   └── go.mod
+│
 ├── frontend/
 │   ├── src/
-│   │   ├── components/
-│   │   ├── pages/
-│   │   ├── services/
-│   │   ├── utils/
-│   │   └── App.tsx
+│   │   ├── components/. - 공통 UI 컴포넌트
+│   │   ├── layout/. - 페이지 레이아웃 컴포넌트
+│   │   ├── pages/. - 로그인, 회원가입, 견적대기 목록 등 페이지 컴포넌트
+│   │   ├── store/. - Zustand 또는 Redux 상태 관리
+│   │   ├── services/. - API 호출 함수
+│   │   ├── utils/. - 유틸리티 함수 (예: 날짜 포맷터, 인증 토큰 관리)
+│   │   ├── hooks/. - 커스텀 React Hooks (예: useAuth, useFetch)
+│   │   └── App.tsx. - 라우팅 및 페이지 레이아웃
 │   ├── public/
 │   └── package.json
 ├── docker-compose.yml
