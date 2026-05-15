@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+
+<html lang="ko"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>VORONOI Partner Platform</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              orange: '#EA580C', // Custom orange from image
+              light: '#F3F4F6',
+            }
+          },
+          fontFamily: {
+            sans: ['Pretendard', '-apple-system', 'BlinkMacSystemFont', 'system-ui', 'Roboto', 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
+<style data-purpose="base-styles">
+    @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css");
+    body {
+      background-color: #F3F4F6;
+      color: #333;
+    }
+    .table-row-hover:hover {
+      background-color: #F9FAFB;
+    }
+  </style>
+</head>
+<body class="font-sans antialiased min-h-screen flex flex-col">
+<!-- BEGIN: MainHeader -->
+<header class="bg-[#E75A22] text-white flex justify-between items-center px-6 py-4 shadow-md sticky top-0 z-50">
+<div class="flex items-center gap-4">
+<div class="flex items-center font-bold text-2xl tracking-wider">
+<svg class="w-8 h-8 mr-2" fill="none" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="white" stroke-linejoin="round" stroke-width="2"></path>
+<path d="M2 17L12 22L22 17" stroke="white" stroke-linejoin="round" stroke-width="2"></path>
+<path d="M2 12L12 17L22 12" stroke="white" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+        VORONOI <span class="mx-3 font-light">X</span> 대정화금
+      </div>
+</div>
+<div class="flex items-center gap-6">
+<button class="relative hover:text-gray-200 transition-colors">
+<i class="fa-solid fa-bell text-xl"></i>
+</button>
+<div class="flex items-center cursor-pointer hover:text-gray-200 transition-colors">
+<span class="mr-2 font-medium">이준규님</span>
+<i class="fa-solid fa-chevron-down text-sm"></i>
+</div>
+</div>
+</header>
+<!-- END: MainHeader -->
+<!-- BEGIN: TabNavigation -->
+<nav class="bg-white border-b border-gray-200 px-6 sticky top-[68px] z-40">
+<div class="flex justify-between items-end">
+<ul class="flex space-x-8 text-gray-500 font-bold text-lg pt-4">
+<li class="pb-3 border-b-4 border-[#E75A22] text-[#E75A22] cursor-pointer flex items-center">
+          견적대기
+          <span class="ml-2 bg-[#E75A22] text-white text-xs rounded-full h-6 w-6 flex items-center justify-center">3</span>
+</li>
+<li class="pb-3 border-b-4 border-transparent hover:border-gray-300 hover:text-gray-700 cursor-pointer transition-colors">견적완료</li>
+<li class="pb-3 border-b-4 border-transparent hover:border-gray-300 hover:text-gray-700 cursor-pointer transition-colors">선정중</li>
+<li class="pb-3 border-b-4 border-transparent hover:border-gray-300 hover:text-gray-700 cursor-pointer transition-colors">납품요청</li>
+<li class="pb-3 border-b-4 border-transparent hover:border-gray-300 hover:text-gray-700 cursor-pointer transition-colors">배송중</li>
+<li class="pb-3 border-b-4 border-transparent hover:border-gray-300 hover:text-gray-700 cursor-pointer transition-colors">납품완료</li>
+</ul>
+<ul class="flex space-x-6 text-gray-400 font-bold text-lg pb-3">
+<li class="cursor-pointer hover:text-gray-600 transition-colors">미선정</li>
+<li class="cursor-pointer hover:text-gray-600 transition-colors">주문취소</li>
+</ul>
+</div>
+</nav>
+<!-- END: TabNavigation -->
+<!-- BEGIN: MainContent -->
+<main class="flex-1 p-8 pb-20 max-w-[1400px] mx-auto w-full">
+<!-- Section: 견적대기 -->
+<section class="mb-12">
+<h2 class="text-2xl font-bold mb-4 flex items-center text-gray-800">
+        견적대기
+        <span class="ml-2 bg-[#E75A22] text-white text-sm rounded-full h-7 w-7 flex items-center justify-center">3</span>
+</h2>
+<div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+<div class="overflow-x-auto">
+<table class="w-full text-center text-sm text-gray-700">
+<thead class="bg-[#E75A22] text-white font-medium">
+<tr>
+<th class="py-3 px-4 w-24">상태</th>
+<th class="py-3 px-4">주문번호</th>
+<th class="py-3 px-4">마감날짜</th>
+<th class="py-3 px-4">단위</th>
+<th class="py-3 px-4">수량</th>
+<th class="py-3 px-4">Supplier</th>
+<th class="py-3 px-4">Catalog No.</th>
+<th class="py-3 px-4">CAS No.</th>
+<th class="py-3 px-4 w-64 text-left">상품명</th>
+<th class="py-3 px-4 w-24">액션</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-gray-100 bg-white">
+<tr class="table-row-hover transition-colors h-16">
+<td class="py-2 px-4"><span class="bg-[#FCECDD] text-[#E75A22] px-3 py-1 rounded-full text-xs font-semibold">접수</span></td>
+<td class="py-2 px-4">260300001</td>
+<td class="py-2 px-4">26.03.05</td>
+<td class="py-2 px-4">24kg</td>
+<td class="py-2 px-4">3</td>
+<td class="py-2 px-4">대정화금</td>
+<td class="py-2 px-4">3030-3365</td>
+<td class="py-2 px-4">75-09-2</td>
+<td class="py-2 px-4 text-left truncate max-w-[200px]" title="dichloromethane">dichloromethane</td>
+<td class="py-2 px-4"><button class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-1.5 rounded-md text-sm transition-colors w-full">요청</button></td>
+</tr>
+<tr class="table-row-hover transition-colors h-16">
+<td class="py-2 px-4"><span class="bg-[#FCECDD] text-[#E75A22] px-3 py-1 rounded-full text-xs font-semibold">접수</span></td>
+<td class="py-2 px-4">260300002</td>
+<td class="py-2 px-4">26.03.05</td>
+<td class="py-2 px-4">1g</td>
+<td class="py-2 px-4">2</td>
+<td class="py-2 px-4">Angene</td>
+<td class="py-2 px-4">AG020KIK</td>
+<td class="py-2 px-4">82132-01-2</td>
+<td class="py-2 px-4 text-left truncate max-w-[200px] text-xs" title="1-methyl-1H-1,2,3-benzotriazol-5-ol">1-methyl-1H-1,2,3-<br/>benzotriazol-5-ol</td>
+<td class="py-2 px-4"><button class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-1.5 rounded-md text-sm transition-colors w-full">요청</button></td>
+</tr>
+<tr class="table-row-hover transition-colors h-16">
+<td class="py-2 px-4"><span class="bg-[#FCECDD] text-[#E75A22] px-3 py-1 rounded-full text-xs font-semibold">접수</span></td>
+<td class="py-2 px-4">260300003</td>
+<td class="py-2 px-4">26.03.05</td>
+<td class="py-2 px-4">24kg</td>
+<td class="py-2 px-4">3</td>
+<td class="py-2 px-4">대정화금</td>
+<td class="py-2 px-4">3030-3365</td>
+<td class="py-2 px-4">75-09-2</td>
+<td class="py-2 px-4 text-left truncate max-w-[200px]" title="dichloromethane">dichloromethane</td>
+<td class="py-2 px-4"><button class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-1.5 rounded-md text-sm transition-colors w-full">요청</button></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="bg-white px-4 py-3 border-t border-gray-100 flex justify-end items-center text-sm text-gray-600">
+<button class="text-gray-400 hover:text-gray-600 p-1"><i class="fa-solid fa-chevron-left"></i></button>
+<span class="mx-3">1 / 1</span>
+<button class="text-gray-400 hover:text-gray-600 p-1"><i class="fa-solid fa-chevron-right"></i></button>
+</div>
+</div>
+</section>
+<!-- Section: 견적완료 -->
+<section class="mb-12">
+<h2 class="text-2xl font-bold mb-4 flex items-center text-gray-800">
+        견적완료
+        <span class="ml-2 bg-[#E75A22] text-white text-sm rounded-full h-7 w-7 flex items-center justify-center">2</span>
+</h2>
+<div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+<div class="overflow-x-auto">
+<table class="w-full text-center text-sm text-gray-700">
+<thead class="bg-[#E75A22] text-white font-medium">
+<tr>
+<th class="py-3 px-4 w-24">상태</th>
+<th class="py-3 px-4">주문번호</th>
+<th class="py-3 px-4">마감날짜</th>
+<th class="py-3 px-4">단위</th>
+<th class="py-3 px-4">수량</th>
+<th class="py-3 px-4">Supplier</th>
+<th class="py-3 px-4">Catalog No.</th>
+<th class="py-3 px-4">CAS No.</th>
+<th class="py-3 px-4 w-64 text-left">상품명</th>
+<th class="py-3 px-4 w-24">견적개수</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-gray-100 bg-white">
+<tr class="table-row-hover transition-colors h-16">
+<td class="py-2 px-4"><span class="bg-[#FCECDD] text-[#E75A22] px-3 py-1 rounded-full text-xs font-semibold">상세</span></td>
+<td class="py-2 px-4">260300004</td>
+<td class="py-2 px-4">26.03.03</td>
+<td class="py-2 px-4">24kg</td>
+<td class="py-2 px-4">3</td>
+<td class="py-2 px-4">대정화금</td>
+<td class="py-2 px-4">3030-3365</td>
+<td class="py-2 px-4">75-09-2</td>
+<td class="py-2 px-4 text-left truncate max-w-[200px]" title="dichloromethane">dichloromethane</td>
+<td class="py-2 px-4">1</td>
+</tr>
+<tr class="table-row-hover transition-colors h-16">
+<td class="py-2 px-4"><span class="bg-[#FCECDD] text-[#E75A22] px-3 py-1 rounded-full text-xs font-semibold">상세</span></td>
+<td class="py-2 px-4">260300005</td>
+<td class="py-2 px-4">26.03.04</td>
+<td class="py-2 px-4">1g</td>
+<td class="py-2 px-4">2</td>
+<td class="py-2 px-4">Angene</td>
+<td class="py-2 px-4">AG020KIK</td>
+<td class="py-2 px-4">82132-01-2</td>
+<td class="py-2 px-4 text-left truncate max-w-[200px] text-xs" title="1-methyl-1H-1,2,3-benzotriazol-5-ol">1-methyl-1H-1,2,3-<br/>benzotriazol-5-ol</td>
+<td class="py-2 px-4">2</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="bg-white px-4 py-3 border-t border-gray-100 flex justify-end items-center text-sm text-gray-600">
+<button class="text-gray-400 hover:text-gray-600 p-1"><i class="fa-solid fa-chevron-left"></i></button>
+<span class="mx-3">1 / 1</span>
+<button class="text-gray-400 hover:text-gray-600 p-1"><i class="fa-solid fa-chevron-right"></i></button>
+</div>
+</div>
+</section>
+<!-- Section: 선정중 -->
+<section>
+<h2 class="text-2xl font-bold mb-4 flex items-center text-gray-800">
+        선정중
+        <span class="ml-2 bg-[#E75A22] text-white text-sm rounded-full h-7 w-7 flex items-center justify-center">2</span>
+</h2>
+<div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+<div class="overflow-x-auto">
+<table class="w-full text-center text-sm text-gray-700">
+<thead class="bg-[#E75A22] text-white font-medium">
+<tr>
+<th class="py-3 px-4 w-24">상태</th>
+<th class="py-3 px-4">주문번호</th>
+<th class="py-3 px-4">마감날짜</th>
+<th class="py-3 px-4">단위</th>
+<th class="py-3 px-4">수량</th>
+<th class="py-3 px-4">Supplier</th>
+<th class="py-3 px-4">Catalog No.</th>
+<th class="py-3 px-4">CAS No.</th>
+<th class="py-3 px-4 w-64 text-left">상품명</th>
+<th class="py-3 px-4 w-32">상태 <i class="fa-regular fa-circle-question text-xs ml-1 opacity-75"></i></th>
+</tr>
+</thead>
+<tbody class="divide-y divide-gray-100 bg-white">
+<tr class="table-row-hover transition-colors h-16">
+<td class="py-2 px-4"><span class="bg-[#FCECDD] text-[#E75A22] px-3 py-1 rounded-full text-xs font-semibold">상세</span></td>
+<td class="py-2 px-4">260300006</td>
+<td class="py-2 px-4">26.03.05</td>
+<td class="py-2 px-4">24kg</td>
+<td class="py-2 px-4">3</td>
+<td class="py-2 px-4">대정화금</td>
+<td class="py-2 px-4">3030-3365</td>
+<td class="py-2 px-4">75-09-2</td>
+<td class="py-2 px-4 text-left truncate max-w-[200px]" title="dichloromethane">dichloromethane</td>
+<td class="py-2 px-4 text-gray-500">결재대기중</td>
+</tr>
+<tr class="table-row-hover transition-colors h-16">
+<td class="py-2 px-4"><span class="bg-[#FCECDD] text-[#E75A22] px-3 py-1 rounded-full text-xs font-semibold">상세</span></td>
+<td class="py-2 px-4">260300007</td>
+<td class="py-2 px-4">26.03.05</td>
+<td class="py-2 px-4">1g</td>
+<td class="py-2 px-4">2</td>
+<td class="py-2 px-4">Angene</td>
+<td class="py-2 px-4">AG020KIK</td>
+<td class="py-2 px-4">82132-01-2</td>
+<td class="py-2 px-4 text-left truncate max-w-[200px] text-xs" title="1-methyl-1H-1,2,3-benzotriazol-5-ol">1-methyl-1H-1,2,3-<br/>benzotriazol-5-ol</td>
+<td class="py-2 px-4 text-gray-500">업체선택중</td>
+</tr>
+</tbody>
+</table> 
+</div>
+<div class="bg-white px-4 py-3 border-t border-gray-100 flex justify-end items-center text-sm text-gray-600">
+<button class="text-gray-400 hover:text-gray-600 p-1"><i class="fa-solid fa-chevron-left"></i></button>
+<span class="mx-3">1 / 1</span>
+<button class="text-gray-400 hover:text-gray-600 p-1"><i class="fa-solid fa-chevron-right"></i></button>
+</div>
+</div>
+</section>
+</main>
+<!-- END: MainContent -->
+</body></html>

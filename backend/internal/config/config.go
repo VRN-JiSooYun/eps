@@ -11,6 +11,7 @@ type Config struct {
 	JWTSecret        string
 	FrontendOrigin   string
 	DevFrontendProxy bool
+	UploadDir        string
 }
 
 func Load() Config {
@@ -20,6 +21,7 @@ func Load() Config {
 		JWTSecret:        env("JWT_SECRET", "dev-only-change-me"),
 		FrontendOrigin:   env("FRONTEND_ORIGIN", "http://localhost:5173"),
 		DevFrontendProxy: envBool("DEV_FRONTEND_PROXY", false),
+		UploadDir:        env("UPLOAD_DIR", "uploads"),
 	}
 }
 

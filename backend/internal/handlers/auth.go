@@ -139,11 +139,15 @@ func getSupplierByEmail(ctx context.Context, db *pgxpool.Pool, email string) (mo
 }
 
 func (h AuthHandler) signToken(supplierID string) (string, error) {
+	return signSupplierToken(supplierID, h.jwtSecret)
+}
+
+func signSupplierToken(supplierID string, jwtSecret string) (string, error) {
 	now := time.Now()
 	claims := jwt.RegisteredClaims{
 		Subject:   supplierID,
 		IssuedAt:  jwt.NewNumericDate(now),
 		ExpiresAt: jwt.NewNumericDate(now.Add(24 * time.Hour)),
 	}
-	return jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString([]byte(h.jwtSecret))
+	return jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString([]byte(jwtSecret))
 }

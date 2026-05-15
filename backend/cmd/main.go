@@ -41,6 +41,7 @@ func main() {
 	}))
 
 	authHandler := handlers.NewAuthHandler(pool, cfg.JWTSecret)
+	supplierHandler := handlers.NewSupplierHandler(pool, cfg.JWTSecret, cfg.UploadDir)
 	quoteHandler := handlers.NewQuoteHandler(pool)
 	authMiddleware := appmiddleware.JWT(cfg.JWTSecret)
 
@@ -51,6 +52,7 @@ func main() {
 	api := e.Group("/api")
 	api.POST("/auth/register", authHandler.Register)
 	api.POST("/auth/login", authHandler.Login)
+	api.POST("/suppliers/register", supplierHandler.Register)
 	api.GET("/quote-requests/pending", quoteHandler.ListPending, authMiddleware)
 
 	if cfg.DevFrontendProxy {

@@ -7,12 +7,13 @@ type Option = {
 };
 
 type SelectFieldProps = SelectHTMLAttributes<HTMLSelectElement> & {
+  error?: string;
   label: string;
   options: Option[];
   requiredMark?: boolean;
 };
 
-export function SelectField({ className = "", id, label, options, requiredMark = false, ...props }: SelectFieldProps) {
+export function SelectField({ className = "", error, id, label, options, requiredMark = false, ...props }: SelectFieldProps) {
   const fieldId = id ?? props.name ?? label;
 
   return (
@@ -23,7 +24,11 @@ export function SelectField({ className = "", id, label, options, requiredMark =
       <span className="relative block">
         <select
           id={fieldId}
-          className={`w-full appearance-none rounded border border-gray-200 bg-white px-4 py-3 pr-10 text-gray-900 outline-none transition-colors focus:border-voronoi-orange focus:ring-1 focus:ring-voronoi-orange ${className}`}
+          className={`w-full appearance-none rounded border bg-white px-4 py-3 pr-10 text-gray-900 outline-none transition-colors focus:border-voronoi-orange focus:ring-1 focus:ring-voronoi-orange ${
+            error ? "border-red-400" : "border-gray-200"
+          } ${className}`}
+          aria-invalid={Boolean(error)}
+          aria-describedby={error ? `${fieldId}-error` : undefined}
           {...props}
         >
           <option value="" />
@@ -35,6 +40,11 @@ export function SelectField({ className = "", id, label, options, requiredMark =
         </select>
         <ChevronDown className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-500" size={20} />
       </span>
+      {error ? (
+        <span className="mt-2 block text-sm text-red-600" id={`${fieldId}-error`}>
+          {error}
+        </span>
+      ) : null}
     </label>
   );
 }

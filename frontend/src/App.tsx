@@ -1,7 +1,7 @@
-import { FormEvent, ReactNode, useEffect, useMemo, useState } from "react";
-import { Bell, ClipboardList, LogOut } from "lucide-react";
+import { FormEvent, useEffect, useState } from "react";
 import { BrowserRouter, Navigate, Route, Routes, useNavigate } from "react-router-dom";
 import { listPendingQuoteRequests, login } from "./api";
+import { MainPage } from "./pages/Main";
 import Register from "./pages/Register";
 import type { AuthResponse, QuoteRequest, Supplier } from "./types";
 
@@ -66,7 +66,7 @@ function AppRoutes() {
         path="/"
         element={
           isAuthed && supplier ? (
-            <DashboardPage supplier={supplier} quotes={quotes} loading={loading} message={message} onLogout={clearSession} />
+            <MainPage supplier={supplier} quotes={quotes} loading={loading} message={message} onLogout={clearSession} />
           ) : (
             <AuthPanel onRegisterClick={() => navigate("/register")} onAuth={saveSession} message={message} setMessage={setMessage} />
           )
@@ -75,38 +75,6 @@ function AppRoutes() {
       <Route path="/register" element={isAuthed ? <Navigate to="/" replace /> : <Register />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
-  );
-}
-
-function DashboardPage({
-  supplier,
-  quotes,
-  loading,
-  message,
-  onLogout
-}: {
-  supplier: Supplier;
-  quotes: QuoteRequest[];
-  loading: boolean;
-  message: string;
-  onLogout: () => void;
-}) {
-  return (
-    <main className="min-h-screen bg-voronoi-gray-100 text-ink">
-      <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-5 py-6">
-        <header className="flex items-center justify-between border-b border-ink/10 pb-5">
-          <div>
-            <p className="text-sm font-semibold text-voronoi-orange">External Procurement System</p>
-            <h1 className="text-2xl font-bold tracking-normal">EPS 공급사 포털</h1>
-          </div>
-          <button className="icon-button" onClick={onLogout} aria-label="로그아웃" title="로그아웃">
-            <LogOut size={20} />
-          </button>
-        </header>
-
-        <Dashboard supplier={supplier} quotes={quotes} loading={loading} message={message} />
-      </div>
-    </main>
   );
 }
 
@@ -231,69 +199,4 @@ function AuthPanel({
       </section>
     </main>
   );
-}
-
-function Dashboard({
-  supplier,
-  quotes,
-  loading,
-  message
-}: {
-  supplier: Supplier;
-  quotes: QuoteRequest[];
-  loading: boolean;
-  message: string;
-}) {
-  const upcomingCount = useMemo(() => quotes.length, [quotes]);
-
-  return (
-    <section className="py-7">
-      <div className="mb-7 grid gap-4 md:grid-cols-[1fr_220px_220px]">
-        <div>
-          <p className="text-sm font-semibold text-voronoi-orange">{supplier.companyName}</p>
-          <h2 className="text-3xl font-bold tracking-normal">견적대기 목록</h2>
-        </div>
-        <Metric icon={<ClipboardList size={20} />} label="대기 건수" value={`${upcomingCount}건`} />
-        <Metric icon={<Bell size={20} />} label="알림" value={upcomingCount > 0 ? "신규 의뢰" : "없음"} />
-      </div>
-
-      {message ? <p className="mb-4 rounded-md bg-coral/10 px-4 py-3 text-sm text-coral">{message}</p> : null}
-
-      <div className="overflow-hidden rounded-md border border-ink/10 bg-white shadow-sm">
-        <div className="grid grid-cols-[150px_1fr_150px_130px] gap-4 border-b border-ink/10 bg-ink px-5 py-3 text-sm font-semibold text-white">
-          <span>요청번호</span>
-          <span>제목</span>
-          <span>마감일</span>
-          <span>요청부서</span>
-        </div>
-        {loading ? <div className="px-5 py-8 text-ink/60">불러오는 중입니다.</div> : null}
-        {!loading && quotes.length === 0 ? <div className="px-5 py-8 text-ink/60">대기 중인 견적 요청이 없습니다.</div> : null}
-        {quotes.map((quote) => (
-          <article key={quote.id} className="grid grid-cols-[150px_1fr_150px_130px] gap-4 border-b border-ink/10 px-5 py-4 last:border-b-0">
-            <span className="font-semibold text-voronoi-orange">{quote.requestNumber}</span>
-            <div>
-              <h3 className="font-semibold">{quote.title}</h3>
-              <p className="mt-1 text-sm text-ink/65">{quote.description}</p>
-            </div>
-            <span>{formatDate(quote.dueDate)}</span>
-            <span className="text-sm text-ink/70">{quote.buyerName}</span>
-          </article>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function Metric({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
-  return (
-    <div className="rounded-md border border-ink/10 bg-white p-4 shadow-sm">
-      <div className="mb-3 text-voronoi-orange">{icon}</div>
-      <p className="text-sm text-ink/60">{label}</p>
-      <p className="text-2xl font-bold">{value}</p>
-    </div>
-  );
-}
-
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat("ko-KR", { dateStyle: "medium" }).format(new Date(value));
 }

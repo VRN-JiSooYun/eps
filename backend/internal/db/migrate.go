@@ -15,9 +15,41 @@ CREATE TABLE IF NOT EXISTS suppliers (
 	password_hash TEXT NOT NULL,
 	company_name TEXT NOT NULL,
 	business_registration_number TEXT NOT NULL,
+	head_office_phone TEXT NOT NULL DEFAULT '',
+	bank_name TEXT NOT NULL DEFAULT '',
+	account_holder TEXT NOT NULL DEFAULT '',
+	account_number TEXT NOT NULL DEFAULT '',
+	contact_name TEXT NOT NULL DEFAULT '',
+	position TEXT NOT NULL DEFAULT '',
+	department TEXT NOT NULL DEFAULT '',
+	mobile_phone TEXT NOT NULL DEFAULT '',
+	direct_phone TEXT NOT NULL DEFAULT '',
+	email_notification_enabled BOOLEAN NOT NULL DEFAULT false,
 	privacy_agreed_at TIMESTAMPTZ NOT NULL,
 	created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
 	updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER TABLE suppliers ADD COLUMN IF NOT EXISTS head_office_phone TEXT NOT NULL DEFAULT '';
+ALTER TABLE suppliers ADD COLUMN IF NOT EXISTS bank_name TEXT NOT NULL DEFAULT '';
+ALTER TABLE suppliers ADD COLUMN IF NOT EXISTS account_holder TEXT NOT NULL DEFAULT '';
+ALTER TABLE suppliers ADD COLUMN IF NOT EXISTS account_number TEXT NOT NULL DEFAULT '';
+ALTER TABLE suppliers ADD COLUMN IF NOT EXISTS contact_name TEXT NOT NULL DEFAULT '';
+ALTER TABLE suppliers ADD COLUMN IF NOT EXISTS position TEXT NOT NULL DEFAULT '';
+ALTER TABLE suppliers ADD COLUMN IF NOT EXISTS department TEXT NOT NULL DEFAULT '';
+ALTER TABLE suppliers ADD COLUMN IF NOT EXISTS mobile_phone TEXT NOT NULL DEFAULT '';
+ALTER TABLE suppliers ADD COLUMN IF NOT EXISTS direct_phone TEXT NOT NULL DEFAULT '';
+ALTER TABLE suppliers ADD COLUMN IF NOT EXISTS email_notification_enabled BOOLEAN NOT NULL DEFAULT false;
+
+CREATE TABLE IF NOT EXISTS supplier_documents (
+	id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+	supplier_id UUID NOT NULL REFERENCES suppliers(id) ON DELETE CASCADE,
+	document_type TEXT NOT NULL CHECK (document_type IN ('business_registration', 'bankbook_copy')),
+	original_filename TEXT NOT NULL,
+	stored_path TEXT NOT NULL,
+	content_type TEXT NOT NULL,
+	size_bytes BIGINT NOT NULL,
+	created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE TABLE IF NOT EXISTS quote_requests (

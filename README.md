@@ -15,14 +15,14 @@ External Procurement System. For Supplier or Vendor of Voronoi Inc.
 ```eps/
 ├── backend/
 │   ├── cmd/
-│   │   └── main.go
-│   ├── internal/
-│   │   ├── handlers/
-│   │   ├── models/
-│   │   ├── services/
-│   │   └── utils/
-│   ├── config/
-│   └── go.mod
+│   │   └── main.go   - 애플리케이션 진입점
+│   ├── internal/ - 애플리케이션 내부 패키지 
+│   │   ├── handlers/ - HTTP 핸들러 (예: auth.go, quote.go)
+│   │   ├── models/ - 데이터 모델 (예: user.go, quote.go)
+│   │   ├── services/ - 비즈니스 로직 (예: auth_service.go, quote_service.go)
+│   │   └── utils/  - 유틸리티 함수 (예: jwt.go, db.go)
+│   ├── config/ - 환경 변수 및 설정 관리
+│   └── go.mod  - Go 모듈 파일
 │
 ├── frontend/
 │   ├── src/
@@ -113,6 +113,34 @@ npm run dev
 - JWT 인증 기반 견적대기 목록 조회
 - PostgreSQL 테이블 자동 생성 및 개발용 견적대기 데이터 seed
 - React 화면: 회원가입, 로그인, 견적대기 목록
+
+## 주요 API
+### Supplier Register
+`POST /api/suppliers/register`
+
+`multipart/form-data` 요청으로 공급업체 정보, 담당자 정보, 필수 첨부파일을 함께 등록합니다.
+
+필수 field:
+- `email`
+- `password`
+- `passwordConfirm`
+- `companyName`
+- `businessRegistrationNumber`
+- `headOfficePhone`
+- `bankName`
+- `accountHolder`
+- `accountNumber`
+- `contactName`
+- `position`
+- `department`
+- `mobilePhone`
+- `privacyAgreed`
+- `businessRegistrationFile`
+- `bankbookFile`
+
+선택 field:
+- `directPhone`
+- `emailNotificationEnabled`
 
 ## API 문서 (TODO)
 API 문서는 Swagger 또는 Postman을 사용하여 작성할 예정입니다. 주요 엔드포인트는 다음과 같습니다:
