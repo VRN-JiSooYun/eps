@@ -105,15 +105,54 @@ func (h AuthHandler) Login(c echo.Context) error {
 func insertSupplier(ctx context.Context, db *pgxpool.Pool, req models.RegisterRequest, passwordHash string) (models.Supplier, error) {
 	var supplier models.Supplier
 	err := db.QueryRow(ctx, `
-		INSERT INTO suppliers (email, password_hash, company_name, business_registration_number, privacy_agreed_at)
-		VALUES ($1, $2, $3, $4, now())
-		RETURNING id, email, password_hash, company_name, business_registration_number, privacy_agreed_at, created_at
-	`, req.Email, passwordHash, req.CompanyName, req.BusinessRegistrationNumber).Scan(
+		WITH inserted_vendor AS (
+			INSERT INTO eps_vendor_info (biz_reg_no, vendor_name, password)
+			VALUES ($1, $2, $3)
+			RETURNING id, biz_reg_no, vendor_name, password, contact, bank_id, account_no, account_holder, biz_reg_cert, bank_account_copy, date_created
+		),
+		inserted_manager AS (
+			INSERT INTO eps_vendor_manager_info (vendor_id, is_main, manager_name, email, notification)
+			SELECT id, true, $2, $4, 'email'
+			FROM inserted_vendor
+			RETURNING vendor_id, manager_name, position, department, contact_mobile, contact_direct, email, notification
+		)
+		SELECT
+			v.id::text,
+			m.email,
+			v.password,
+			v.vendor_name,
+			v.biz_reg_no,
+			v.contact,
+			COALESCE(b.bank_name, ''),
+			v.account_holder,
+			v.account_no,
+			m.manager_name,
+			m.position,
+			m.department,
+			m.contact_mobile,
+			m.contact_direct,
+			m.notification <> '',
+			v.date_created,
+			v.date_created
+		FROM inserted_vendor v
+		JOIN inserted_manager m ON m.vendor_id = v.id
+		LEFT JOIN bank b ON b.id = v.bank_id
+	`, req.BusinessRegistrationNumber, req.CompanyName, passwordHash, req.Email).Scan(
 		&supplier.ID,
 		&supplier.Email,
 		&supplier.PasswordHash,
 		&supplier.CompanyName,
 		&supplier.BusinessRegistrationNumber,
+		&supplier.HeadOfficePhone,
+		&supplier.BankName,
+		&supplier.AccountHolder,
+		&supplier.AccountNumber,
+		&supplier.ContactName,
+		&supplier.Position,
+		&supplier.Department,
+		&supplier.MobilePhone,
+		&supplier.DirectPhone,
+		&supplier.EmailNotificationEnabled,
 		&supplier.PrivacyAgreedAt,
 		&supplier.CreatedAt,
 	)
@@ -123,15 +162,48 @@ func insertSupplier(ctx context.Context, db *pgxpool.Pool, req models.RegisterRe
 func getSupplierByEmail(ctx context.Context, db *pgxpool.Pool, email string) (models.Supplier, error) {
 	var supplier models.Supplier
 	err := db.QueryRow(ctx, `
-		SELECT id, email, password_hash, company_name, business_registration_number, privacy_agreed_at, created_at
-		FROM suppliers
-		WHERE email = $1
+		SELECT
+			v.id::text,
+			m.email,
+			v.password,
+			v.vendor_name,
+			v.biz_reg_no,
+			v.contact,
+			COALESCE(b.bank_name, ''),
+			v.account_holder,
+			v.account_no,
+			m.manager_name,
+			m.position,
+			m.department,
+			m.contact_mobile,
+			m.contact_direct,
+			m.notification <> '',
+			v.date_created,
+			v.date_created
+		FROM eps_vendor_manager_info m
+		JOIN eps_vendor_info v ON v.id = m.vendor_id
+		LEFT JOIN bank b ON b.id = v.bank_id
+		WHERE lower(m.email) = lower($1)
+			AND m.check_discard = false
+			AND v.check_discard = false
+		ORDER BY m.is_main DESC, m.date_created ASC
+		LIMIT 1
 	`, email).Scan(
 		&supplier.ID,
 		&supplier.Email,
 		&supplier.PasswordHash,
 		&supplier.CompanyName,
 		&supplier.BusinessRegistrationNumber,
+		&supplier.HeadOfficePhone,
+		&supplier.BankName,
+		&supplier.AccountHolder,
+		&supplier.AccountNumber,
+		&supplier.ContactName,
+		&supplier.Position,
+		&supplier.Department,
+		&supplier.MobilePhone,
+		&supplier.DirectPhone,
+		&supplier.EmailNotificationEnabled,
 		&supplier.PrivacyAgreedAt,
 		&supplier.CreatedAt,
 	)

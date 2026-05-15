@@ -115,17 +115,21 @@ func (h SupplierHandler) Register(c echo.Context) error {
 	uploadBase := filepath.Join(h.uploadDir, "suppliers", supplier.ID)
 	documents := make([]models.SupplierDocument, 0, 2)
 
-	businessRegistrationDocument, err := h.saveAndInsertDocument(ctx, tx, supplier.ID, "business_registration", businessRegistrationFile, uploadBase)
+	businessRegistrationDocument, err := h.saveDocument(supplier.ID, "business_registration", businessRegistrationFile, uploadBase)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 	documents = append(documents, businessRegistrationDocument)
 
-	bankbookDocument, err := h.saveAndInsertDocument(ctx, tx, supplier.ID, "bankbook_copy", bankbookFile, uploadBase)
+	bankbookDocument, err := h.saveDocument(supplier.ID, "bankbook_copy", bankbookFile, uploadBase)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 	documents = append(documents, bankbookDocument)
+
+	if err := updateVendorDocumentPaths(ctx, tx, supplier.ID, businessRegistrationDocument.StoredPath, bankbookDocument.StoredPath); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to save uploaded file paths")
+	}
 
 	if err := tx.Commit(ctx); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to complete supplier registration")
@@ -197,7 +201,7 @@ func isAllowedDocumentType(filename string, contentType string) bool {
 	}
 }
 
-func (h SupplierHandler) saveAndInsertDocument(ctx context.Context, tx pgx.Tx, supplierID string, documentType string, fileHeader *multipart.FileHeader, uploadBase string) (models.SupplierDocument, error) {
+func (h SupplierHandler) saveDocument(supplierID string, documentType string, fileHeader *multipart.FileHeader, uploadBase string) (models.SupplierDocument, error) {
 	if err := os.MkdirAll(uploadBase, 0755); err != nil {
 		return models.SupplierDocument{}, fmt.Errorf("failed to prepare upload directory")
 	}
@@ -220,67 +224,79 @@ func (h SupplierHandler) saveAndInsertDocument(ctx context.Context, tx pgx.Tx, s
 		return models.SupplierDocument{}, fmt.Errorf("failed to write uploaded file")
 	}
 
-	var document models.SupplierDocument
-	err = tx.QueryRow(ctx, `
-		INSERT INTO supplier_documents (supplier_id, document_type, original_filename, stored_path, content_type, size_bytes)
-		VALUES ($1, $2, $3, $4, $5, $6)
-		RETURNING id, supplier_id, document_type, original_filename, stored_path, content_type, size_bytes, created_at
-	`, supplierID, documentType, fileHeader.Filename, storedPath, fileHeader.Header.Get("Content-Type"), fileHeader.Size).Scan(
-		&document.ID,
-		&document.SupplierID,
-		&document.DocumentType,
-		&document.OriginalFilename,
-		&document.StoredPath,
-		&document.ContentType,
-		&document.SizeBytes,
-		&document.CreatedAt,
-	)
-	if err != nil {
-		return models.SupplierDocument{}, fmt.Errorf("failed to save uploaded file metadata")
-	}
-	return document, nil
+	return models.SupplierDocument{
+		ID:               fmt.Sprintf("%s:%s", supplierID, documentType),
+		SupplierID:       supplierID,
+		DocumentType:     documentType,
+		OriginalFilename: fileHeader.Filename,
+		StoredPath:       storedPath,
+		ContentType:      fileHeader.Header.Get("Content-Type"),
+		SizeBytes:        fileHeader.Size,
+		CreatedAt:        time.Now(),
+	}, nil
 }
 
 func insertFullSupplier(ctx context.Context, tx pgx.Tx, req supplierRegisterForm, passwordHash string) (models.Supplier, error) {
 	var supplier models.Supplier
 	err := tx.QueryRow(ctx, `
-		INSERT INTO suppliers (
-			email,
-			password_hash,
-			company_name,
-			business_registration_number,
-			head_office_phone,
-			bank_name,
-			account_holder,
-			account_number,
-			contact_name,
-			position,
-			department,
-			mobile_phone,
-			direct_phone,
-			email_notification_enabled,
-			privacy_agreed_at
+		WITH upserted_bank AS (
+			INSERT INTO bank (bank_name)
+			VALUES ($1)
+			ON CONFLICT (bank_name) DO UPDATE SET bank_name = EXCLUDED.bank_name
+			RETURNING id, bank_name
+		),
+		inserted_vendor AS (
+			INSERT INTO eps_vendor_info (
+				biz_reg_no,
+				vendor_name,
+				contact,
+				password,
+				bank_id,
+				account_no,
+				account_holder
+			)
+			SELECT $2, $3, $4, $5, id, $6, $7
+			FROM upserted_bank
+			RETURNING id, biz_reg_no, vendor_name, contact, password, bank_id, account_no, account_holder, date_created
+		),
+		inserted_manager AS (
+			INSERT INTO eps_vendor_manager_info (
+				vendor_id,
+				is_main,
+				manager_name,
+				position,
+				department,
+				contact_mobile,
+				contact_direct,
+				email,
+				notification
+			)
+			SELECT id, true, $8, $9, $10, $11, $12, $13, $14
+			FROM inserted_vendor
+			RETURNING vendor_id, manager_name, position, department, contact_mobile, contact_direct, email, notification
 		)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, now())
-		RETURNING
-			id,
-			email,
-			password_hash,
-			company_name,
-			business_registration_number,
-			head_office_phone,
-			bank_name,
-			account_holder,
-			account_number,
-			contact_name,
-			position,
-			department,
-			mobile_phone,
-			direct_phone,
-			email_notification_enabled,
-			privacy_agreed_at,
-			created_at
-	`, req.Email, passwordHash, req.CompanyName, req.BusinessRegistrationNumber, req.HeadOfficePhone, req.BankName, req.AccountHolder, req.AccountNumber, req.ContactName, req.Position, req.Department, req.MobilePhone, req.DirectPhone, req.EmailNotificationEnabled).Scan(
+		SELECT
+			v.id::text,
+			m.email,
+			v.password,
+			v.vendor_name,
+			v.biz_reg_no,
+			v.contact,
+			b.bank_name,
+			v.account_holder,
+			v.account_no,
+			m.manager_name,
+			m.position,
+			m.department,
+			m.contact_mobile,
+			m.contact_direct,
+			m.notification <> '',
+			v.date_created,
+			v.date_created
+		FROM inserted_vendor v
+		JOIN upserted_bank b ON b.id = v.bank_id
+		JOIN inserted_manager m ON m.vendor_id = v.id
+	`, req.BankName, req.BusinessRegistrationNumber, req.CompanyName, req.HeadOfficePhone, passwordHash, req.AccountNumber, req.AccountHolder, req.ContactName, req.Position, req.Department, req.MobilePhone, req.DirectPhone, req.Email, notificationValue(req.EmailNotificationEnabled)).Scan(
 		&supplier.ID,
 		&supplier.Email,
 		&supplier.PasswordHash,
@@ -300,6 +316,22 @@ func insertFullSupplier(ctx context.Context, tx pgx.Tx, req supplierRegisterForm
 		&supplier.CreatedAt,
 	)
 	return supplier, err
+}
+
+func updateVendorDocumentPaths(ctx context.Context, tx pgx.Tx, supplierID string, businessRegistrationPath string, bankbookPath string) error {
+	_, err := tx.Exec(ctx, `
+		UPDATE eps_vendor_info
+		SET biz_reg_cert = $2, bank_account_copy = $3
+		WHERE id = $1::integer
+	`, supplierID, businessRegistrationPath, bankbookPath)
+	return err
+}
+
+func notificationValue(enabled bool) string {
+	if enabled {
+		return "email"
+	}
+	return ""
 }
 
 func parseBool(value string) bool {

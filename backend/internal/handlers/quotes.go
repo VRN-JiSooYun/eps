@@ -24,10 +24,20 @@ func (h QuoteHandler) ListPending(c echo.Context) error {
 	defer cancel()
 
 	rows, err := h.db.Query(ctx, `
-		SELECT id, request_number, title, description, status, due_date, buyer_name, created_at
-		FROM quote_requests
-		WHERE status = 'pending'
-		ORDER BY due_date ASC, created_at DESC
+		SELECT
+			r.id::text,
+			'ER-' || lpad(r.id::text, 6, '0') AS request_number,
+			r.product_name AS title,
+			COALESCE(NULLIF(r.note, ''), concat_ws(' / ', NULLIF(r.cas_no, ''), NULLIF(r.catalog_no, ''))) AS description,
+			COALESCE(NULLIF(r.status, ''), 'pending') AS status,
+			COALESCE(r.date_discard, r.date_created) AS due_date,
+			COALESCE(s.supplier_name, 'Voronoi Procurement') AS buyer_name,
+			r.date_created
+		FROM eps_estimate_request r
+		LEFT JOIN supplier s ON s.id = r.supplier_id
+		WHERE r.discard = false
+			AND (r.status IS NULL OR r.status = '' OR r.status = 'pending')
+		ORDER BY COALESCE(r.date_discard, r.date_created) ASC, r.date_created DESC
 	`)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to list quote requests")

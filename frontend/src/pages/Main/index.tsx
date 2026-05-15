@@ -158,7 +158,7 @@ export function MainPage({ loading, message, onLogout, quotes, supplier }: MainP
             {tabs.map((tab, index) => (
               <li
                 onClick={() => scrollToSection(tab)}
-                className={`flex cursor-pointer items-center border-b-4 pb-3 transition-colors ${
+                className={`group flex cursor-pointer items-center border-b-4 pb-3 transition-colors ${
                   selectedTab === tab
                     ? "border-[#E75A22] text-[#E75A22]"
                     : "border-transparent hover:border-gray-300 hover:text-gray-700"
@@ -166,7 +166,7 @@ export function MainPage({ loading, message, onLogout, quotes, supplier }: MainP
                 key={tab}
               >
                 {tab}
-                {index === 0 ? <CountBadge count={pendingCount} className="ml-2 h-6 w-6 text-xs" /> : null}
+                {/* {index === 0 ? <CountBadge active={selectedTab === tab} count={pendingCount} className="ml-2 h-6 w-6 text-xs" /> : null} */}
               </li>
             ))}
           </ul>
@@ -315,8 +315,10 @@ function SectionActionLabel({ type }: { type: SectionConfig["type"] }) {
   return <></>;
 }
 
-function CountBadge({ className, count }: { className?: string; count: number }) {
-  return <span className={`flex items-center justify-center rounded-full bg-[#E75A22] font-semibold text-white ${className ?? ""}`}>{count}</span>;
+function CountBadge({ active = true, className, count }: { active?: boolean; className?: string; count: number }) {
+  const colorClass = active ? "bg-[#E75A22]" : "bg-gray-300 group-hover:bg-gray-400";
+
+  return <span className={`flex items-center justify-center rounded-full font-semibold text-white transition-colors ${colorClass} ${className ?? ""}`}>{count}</span>;
 }
 
 function formatShortDate(value: string) {
