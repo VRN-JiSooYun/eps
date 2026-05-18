@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { BellOutlined, DownOutlined, LogoutOutlined, PaperClipOutlined, QuestionCircleOutlined } from "@ant-design/icons";
 import { Button as AntButton, Card, Checkbox, Col, Descriptions, Form, Input, InputNumber, Row, Select, Space, Table, Upload } from "antd";
+import type { InputNumberProps } from "antd";
 import type { TableColumnsType } from "antd";
 import type { EstimateRequest, Supplier } from "../../types";
 import { Modal } from "../../layout/Modal/Modal";
@@ -25,6 +26,28 @@ const tabs = ["견적대기", "견적완료", "선정중", "납품요청", "배�
 const secondaryTabs = ["미선정", "주문취소"];
 const STICKY_HEIGHT = 180;
 const ROWS_PER_PAGE = 5;
+
+const numberFormatter: InputNumberProps<number>["formatter"] = (value) => {
+  if (value === undefined || value === null) {
+    return "";
+  }
+  const [start, end] = `${value}`.split(".");
+  const formattedStart = start.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return end ? `${formattedStart}.${end}` : formattedStart;
+};
+
+const numberParser: InputNumberProps<number>["parser"] = (value) => {
+  const numericValue = Number(`${value ?? ""}`.replace(/,/g, ""));
+  return Number.isFinite(numericValue) ? numericValue : 0;
+};
+
+function toNumericValue(value: unknown) {
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? value : 0;
+  }
+  const numericValue = Number(`${value ?? ""}`.replace(/,/g, "").trim());
+  return Number.isFinite(numericValue) ? numericValue : 0;
+};
 
 export function MainPage({ estimateRequests, loading, message, onLogout, supplier }: MainPageProps) {
   const [selectedTab, setSelectedTab] = useState(tabs[0]);
@@ -342,12 +365,18 @@ function EstimateRequestSection({
 }
 
 function EstimateRequestModalContent({ onClose, request, supplier }: { onClose: () => void; request: EstimateRequest; supplier: Supplier }) {
+  const [form] = Form.useForm();
+  const watchedCount = Form.useWatch("count", form);
+  const watchedUnitPrice = Form.useWatch("unitPrice", form);
   const unitLabel = formatUnitLabel(request);
   const supplierLabel = formatSupplier(request);
+  const totalAmount = toNumericValue(watchedUnitPrice) * toNumericValue(watchedCount);
+  const formattedTotalAmount = totalAmount > 0 ? totalAmount.toLocaleString() : "-";
 
   return (
     <Form
       className="pb-1 pt-2"
+      form={form}
       initialValues={{
         catalogNo: request.catalogNo,
         casNo: request.casNo,
@@ -411,7 +440,7 @@ function EstimateRequestModalContent({ onClose, request, supplier }: { onClose: 
                   rules={[{ required: true }]}
                 >
                   <Space.Compact className="w-full">
-                    <InputNumber className="w-full" min={0} />
+                    <InputNumber className="w-full" min={0} step={1000} formatter={numberFormatter} parser={numberParser} />
                     <Input className="eps-static-addon w-12 cursor-default bg-gray-50 text-center text-gray-900" readOnly value="원" />
                   </Space.Compact>
                 </Form.Item>
@@ -471,6 +500,7 @@ function EstimateRequestModalContent({ onClose, request, supplier }: { onClose: 
 
             <div className="mt-auto flex justify-end pr-4 text-base text-gray-500">
               <span className="mr-48">총 금액</span>
+              <span className="min-w-28 text-right text-gray-900">{formattedTotalAmount}</span>
               <span>원</span>
             </div>
           </Col>
