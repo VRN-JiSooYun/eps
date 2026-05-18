@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import { BellOutlined, DownOutlined, LogoutOutlined, QuestionCircleOutlined } from "@ant-design/icons";
-import { Button as AntButton, Table } from "antd";
+import { BellOutlined, DownOutlined, LogoutOutlined, PaperClipOutlined, QuestionCircleOutlined } from "@ant-design/icons";
+import { Button as AntButton, Card, Checkbox, Col, Descriptions, Form, Input, InputNumber, Row, Select, Space, Table, Upload } from "antd";
 import type { TableColumnsType } from "antd";
 import type { EstimateRequest, Supplier } from "../../types";
+import { Modal } from "../../layout/Modal/Modal";
 
 type MainPageProps = {
   loading: boolean;
@@ -202,6 +203,7 @@ export function MainPage({ estimateRequests, loading, message, onLogout, supplie
             sectionRef={(element) => {
               sectionRefs.current[section.title] = element;
             }}
+            supplier={supplier}
           />
         ))}
       </div>
@@ -212,16 +214,27 @@ export function MainPage({ estimateRequests, loading, message, onLogout, supplie
 function EstimateRequestSection({
   loading,
   section,
-  sectionRef
+  sectionRef,
+  supplier
 }: {
   loading: boolean;
   section: SectionConfig;
   sectionRef: (element: HTMLElement | null) => void;
+  supplier: Supplier;
 }) {
+  const [selectedRequest, setSelectedRequest] = useState<EstimateRequest | null>(null);
   const columns: TableColumnsType<EstimateRequest> = [
     {
       align: "center",
-      render: () => <span className="rounded-full bg-[#FCECDD] px-3 py-1 text-xs font-semibold text-[#E75A22]">{section.type === "pending" ? "접수" : "상세"}</span>,
+      render: (_, estimateRequest) => (
+        <button
+          className="rounded-full bg-[#FCECDD] px-3 py-1 text-xs font-semibold text-[#E75A22] transition-colors hover:bg-[#F8D9C5]"
+          type="button"
+          onClick={() => setSelectedRequest(estimateRequest)}
+        >
+          {section.type === "pending" ? "접수" : "상세"}
+        </button>
+      ),
       title: "",
       width: 96
     },
@@ -309,7 +322,217 @@ function EstimateRequestSection({
           scroll={{ x: 1040 }}
         />
       </div>
+      <Modal
+        visible={Boolean(selectedRequest)}
+        title={
+          <span className="text-2xl font-bold text-black">
+            견적서 작성 <span className="ml-3 text-lg font-semibold text-gray-400">{selectedRequest ? formatEstimateRequestNumber(selectedRequest) : ""}</span>
+          </span>
+        }
+        onClose={() => setSelectedRequest(null)}
+        width={1180}
+        content={
+          selectedRequest ? (
+            <EstimateRequestModalContent request={selectedRequest} supplier={supplier} onClose={() => setSelectedRequest(null)} />
+          ) : null
+        }
+      />
     </section>
+  );
+}
+
+function EstimateRequestModalContent({ onClose, request, supplier }: { onClose: () => void; request: EstimateRequest; supplier: Supplier }) {
+  const unitLabel = formatUnitLabel(request);
+  const supplierLabel = formatSupplier(request);
+
+  return (
+    <Form
+      className="pb-1 pt-2"
+      initialValues={{
+        catalogNo: request.catalogNo,
+        casNo: request.casNo,
+        count: request.count,
+        productName: request.productName,
+        supplier: supplierLabel,
+        unit: unitLabel || undefined,
+        unitValue: request.unitValue
+      }}
+      layout="vertical"
+      onFinish={onClose}
+    >
+      <Space className="w-full" direction="vertical" size={20}>
+        <Row gutter={[20, 20]}>
+          <Col xs={24} lg={9}>
+            <Card className="h-full bg-gray-100" bordered={false} title={<span className="text-2xl font-medium text-black">견적요청서</span>}>
+              <Descriptions
+                column={1}
+                colon={false}
+                items={[
+                  { label: "요청일시", children: formatDateTime(request.dateCreated) },
+                  { label: "마감날짜", children: formatDateTime(request.dateDiscard) },
+                  { label: "상품명", children: request.productName },
+                  { label: "CAS No.", children: request.casNo || "-" },
+                  { label: "Supplier", children: supplierLabel },
+                  { label: "Catalog No.", children: <span className="text-voronoi-orange underline underline-offset-2">{request.catalogNo || "-"}</span> },
+                  { label: "단위", children: formatUnit(request) },
+                  { label: "수량", children: request.count }
+                ]}
+              />
+            </Card>
+          </Col>
+
+          <Col xs={24} lg={15}>
+            <Row gutter={[16, 12]}>
+              <Col xs={24} md={8}>
+                <Form.Item label="상품명" name="productName" rules={[{ required: true }]}>
+                  <Input />
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={8}>
+                <Form.Item label="Supplier" name="supplier" rules={[{ required: true }]}>
+                  <Select options={[{ label: supplierLabel, value: supplierLabel }]} />
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={8}>
+                <Form.Item label="Catalog No." name="catalogNo" rules={[{ required: true }]}>
+                  <Input />
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={8}>
+                <Form.Item
+                  label={
+                    <span className="flex w-full items-center justify-between gap-3">
+                      <span>단가</span>
+                      <span className="text-xs text-voronoi-orange">※부가세제외</span>
+                    </span>
+                  }
+                  name="unitPrice"
+                  rules={[{ required: true }]}
+                >
+                  <InputNumber className="w-full" addonAfter="원" min={0} />
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={8}>
+                <Form.Item label="단위" required>
+                  <Space.Compact className="w-full">
+                    <Form.Item className="mb-0 w-full" name="unitValue" noStyle rules={[{ required: true }]}>
+                      <InputNumber className="w-full" min={0} />
+                    </Form.Item>
+                    <Form.Item className="mb-0 w-24" name="unit" noStyle rules={[{ required: true }]}>
+                      <Select options={unitLabel ? [{ label: unitLabel, value: unitLabel }] : []} />
+                    </Form.Item>
+                  </Space.Compact>
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={8}>
+                <Form.Item label="수량" name="count" rules={[{ required: true }]}>
+                  <InputNumber className="w-full" min={1} />
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={8}>
+                <Form.Item
+                  label={
+                    <span className="flex w-full items-center justify-between gap-3">
+                      <span>CAS</span>
+                      <Checkbox>대체품</Checkbox>
+                    </span>
+                  }
+                  name="casNo"
+                  rules={[{ required: true }]}
+                >
+                  <Input />
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={8}>
+                <Form.Item label="배송기한" required>
+                  <Space.Compact className="w-full">
+                    <Select className="w-full" options={[]} />
+                    <Input className="w-8 text-center" disabled value="~" />
+                    <Select className="w-full" options={[]} />
+                    <Select className="w-20" value="주" options={[{ label: "주", value: "주" }]} />
+                  </Space.Compact>
+                </Form.Item>
+              </Col>
+              <Col xs={12} md={4}>
+                <Form.Item label="Purity" name="purity">
+                  <Input />
+                </Form.Item>
+              </Col>
+              <Col xs={12} md={4}>
+                <Form.Item label="Grade" name="grade">
+                  <Input />
+                </Form.Item>
+              </Col>
+              <Col span={24}>
+                <div className="flex justify-end text-base text-gray-500">
+                  <span className="mr-48">총금액</span>
+                  <span className="text-gray-900">원</span>
+                </div>
+              </Col>
+            </Row>
+          </Col>
+        </Row>
+
+        <Row gutter={[20, 20]}>
+          <Col xs={24} lg={9}>
+            <Card
+              className="h-full bg-gray-100"
+              bordered={false}
+              extra={
+                <AntButton className="!bg-voronoi-orange !text-white" shape="round" type="primary">
+                  수정
+                </AntButton>
+              }
+              title={<span className="text-2xl font-medium text-black">담당업체정보</span>}
+            >
+              <Descriptions
+                column={1}
+                colon={false}
+                items={[
+                  { label: "업체", children: supplier.companyName },
+                  { label: "담당자", children: supplier.contactName || "-" },
+                  { label: "휴대폰", children: supplier.mobilePhone || "-" },
+                  { label: "이메일", children: supplier.email }
+                ]}
+              />
+            </Card>
+          </Col>
+
+          <Col xs={24} lg={15}>
+            <Row gutter={[24, 16]}>
+              <Col xs={24} md={12}>
+                <Form.Item className="mb-0" name="note">
+                  <Input.TextArea className="!min-h-[170px]" placeholder="특이사항" />
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={12}>
+                <Form.Item className="mb-0" name="quoteFile">
+                  <Upload.Dragger beforeUpload={() => false} className="eps-estimate-upload" maxCount={1}>
+                    <div className="flex min-h-[170px] flex-col items-center justify-center text-gray-400">
+                      <PaperClipOutlined className="mb-2 text-4xl" />
+                      <p className="mb-1 text-lg">견적서</p>
+                      <p className="mb-4 text-lg">pdf, jpg, png 첨부 가능</p>
+                      <AntButton className="!bg-[#555] !px-6 !font-semibold !text-white" size="large">
+                        파일 가져오기
+                      </AntButton>
+                    </div>
+                  </Upload.Dragger>
+                </Form.Item>
+              </Col>
+            </Row>
+          </Col>
+        </Row>
+
+        <div className="flex justify-end gap-3 pt-1">
+          <AntButton className="!h-10 !px-6" size="large" onClick={onClose}>
+            닫기
+          </AntButton>
+          <AntButton className="!h-10 !bg-voronoi-orange !px-6 !font-bold" htmlType="submit" size="large" type="primary">
+            접수하기
+          </AntButton>
+        </div>
+      </Space>
+    </Form>
   );
 }
 
@@ -358,6 +581,10 @@ function formatUnit(request: EstimateRequest) {
   return `${request.unitValue} ${unit}`;
 }
 
+function formatUnitLabel(request: EstimateRequest) {
+  return request.unit == null ? "" : String(request.unit).trim();
+}
+
 function formatShortDate(value: string | null) {
   if (!value) {
     return "-";
@@ -371,6 +598,29 @@ function formatShortDate(value: string | null) {
     day: "2-digit",
     month: "2-digit",
     year: "2-digit"
+  })
+    .format(date)
+    .replace(/\. /g, ".")
+    .replace(/\.$/, "");
+}
+
+function formatDateTime(value: string | null) {
+  if (!value) {
+    return "-";
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "-";
+  }
+
+  return new Intl.DateTimeFormat("ko-KR", {
+    day: "2-digit",
+    hour: "2-digit",
+    hour12: false,
+    minute: "2-digit",
+    month: "2-digit",
+    year: "numeric"
   })
     .format(date)
     .replace(/\. /g, ".")

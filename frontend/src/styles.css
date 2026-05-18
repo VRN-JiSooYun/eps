@@ -94,6 +94,11 @@
     @apply !text-left;
   }
 
+  .eps-estimate-upload .ant-upload-drag {
+    @apply !border-gray-400 !bg-gray-50;
+    border-style: dashed;
+  }
+
   .login-visual::before {
     background-image: url("/images/login-bg.png");
     background-position: center;
