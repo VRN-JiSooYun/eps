@@ -360,11 +360,12 @@ function EstimateRequestModalContent({ onClose, request, supplier }: { onClose: 
       layout="vertical"
       onFinish={onClose}
     >
-      <Space className="w-full" direction="vertical" size={20}>
+      <Space className="w-full" orientation="vertical" size={20}>
         <Row gutter={[20, 20]}>
           <Col xs={24} lg={9}>
-            <Card className="h-full bg-gray-100" bordered={false} title={<span className="text-2xl font-medium text-black">견적요청서</span>}>
+            <Card className="h-full bg-gray-100" variant="outlined" title={<span className="text-2xl font-medium text-black">견적요청서</span>}>
               <Descriptions
+                className="eps-info-descriptions"
                 column={1}
                 colon={false}
                 items={[
@@ -381,8 +382,8 @@ function EstimateRequestModalContent({ onClose, request, supplier }: { onClose: 
             </Card>
           </Col>
 
-          <Col xs={24} lg={15}>
-            <Row gutter={[16, 12]}>
+          <Col className="flex flex-col" xs={24} lg={15}>
+            <Row className="w-full" gutter={[16, 12]}>
               <Col xs={24} md={8}>
                 <Form.Item label="상품명" name="productName" rules={[{ required: true }]}>
                   <Input />
@@ -409,7 +410,10 @@ function EstimateRequestModalContent({ onClose, request, supplier }: { onClose: 
                   name="unitPrice"
                   rules={[{ required: true }]}
                 >
-                  <InputNumber className="w-full" addonAfter="원" min={0} />
+                  <Space.Compact className="w-full">
+                    <InputNumber className="w-full" min={0} />
+                    <Input className="eps-static-addon w-12 cursor-default bg-gray-50 text-center text-gray-900" readOnly value="원" />
+                  </Space.Compact>
                 </Form.Item>
               </Col>
               <Col xs={24} md={8}>
@@ -418,8 +422,8 @@ function EstimateRequestModalContent({ onClose, request, supplier }: { onClose: 
                     <Form.Item className="mb-0 w-full" name="unitValue" noStyle rules={[{ required: true }]}>
                       <InputNumber className="w-full" min={0} />
                     </Form.Item>
-                    <Form.Item className="mb-0 w-24" name="unit" noStyle rules={[{ required: true }]}>
-                      <Select options={unitLabel ? [{ label: unitLabel, value: unitLabel }] : []} />
+                    <Form.Item name="unit" noStyle rules={[{ required: true }]}>
+                      <Select className="!w-24" options={unitLabel ? [{ label: unitLabel, value: unitLabel }] : []} />
                     </Form.Item>
                   </Space.Compact>
                 </Form.Item>
@@ -445,12 +449,12 @@ function EstimateRequestModalContent({ onClose, request, supplier }: { onClose: 
               </Col>
               <Col xs={24} md={8}>
                 <Form.Item label="배송기한" required>
-                  <Space.Compact className="w-full">
-                    <Select className="w-full" options={[]} />
-                    <Input className="w-8 text-center" disabled value="~" />
-                    <Select className="w-full" options={[]} />
+                  <div className="flex w-full items-center gap-2">
+                    <Select className="flex-1" options={[]} />
+                    <span className="text-gray-400">~</span>
+                    <Select className="flex-1" options={[]} />
                     <Select className="w-20" value="주" options={[{ label: "주", value: "주" }]} />
-                  </Space.Compact>
+                  </div>
                 </Form.Item>
               </Col>
               <Col xs={12} md={4}>
@@ -463,20 +467,19 @@ function EstimateRequestModalContent({ onClose, request, supplier }: { onClose: 
                   <Input />
                 </Form.Item>
               </Col>
-              <Col span={24}>
-                <div className="flex justify-end text-base text-gray-500">
-                  <span className="mr-48">총금액</span>
-                  <span className="text-gray-900">원</span>
-                </div>
-              </Col>
             </Row>
+
+            <div className="mt-auto flex justify-end pr-4 text-base text-gray-500">
+              <span className="mr-48">총 금액</span>
+              <span>원</span>
+            </div>
           </Col>
         </Row>
 
-        <Row gutter={[20, 20]}>
-          <Col xs={24} lg={9}>
+        <Row className="items-stretch" gutter={[20, 20]}>
+          <Col className="flex" xs={24} lg={9}>
             <Card
-              className="h-full bg-gray-100"
+              className="min-h-[230px] w-full bg-gray-100"
               bordered={false}
               extra={
                 <AntButton className="!bg-voronoi-orange !text-white" shape="round" type="primary">
@@ -486,6 +489,7 @@ function EstimateRequestModalContent({ onClose, request, supplier }: { onClose: 
               title={<span className="text-2xl font-medium text-black">담당업체정보</span>}
             >
               <Descriptions
+                className="eps-info-descriptions"
                 column={1}
                 colon={false}
                 items={[
@@ -498,17 +502,17 @@ function EstimateRequestModalContent({ onClose, request, supplier }: { onClose: 
             </Card>
           </Col>
 
-          <Col xs={24} lg={15}>
-            <Row gutter={[24, 16]}>
-              <Col xs={24} md={12}>
-                <Form.Item className="mb-0" name="note">
-                  <Input.TextArea className="!min-h-[170px]" placeholder="특이사항" />
+          <Col className="flex" xs={24} lg={15}>
+            <Row className="w-full items-stretch" gutter={[16, 16]}>
+              <Col className="flex" xs={24} md={12}>
+                <Form.Item className="eps-fill-form-item mb-0 w-full" name="note">
+                  <Input.TextArea className="eps-fill-textarea" placeholder="특이사항" />
                 </Form.Item>
               </Col>
-              <Col xs={24} md={12}>
-                <Form.Item className="mb-0" name="quoteFile">
+              <Col className="flex" xs={24} md={12}>
+                <Form.Item className="eps-fill-form-item mb-0 w-full" name="quoteFile">
                   <Upload.Dragger beforeUpload={() => false} className="eps-estimate-upload" maxCount={1}>
-                    <div className="flex min-h-[170px] flex-col items-center justify-center text-gray-400">
+                    <div className="flex h-full min-h-[230px] flex-col items-center justify-center text-gray-400">
                       <PaperClipOutlined className="mb-2 text-4xl" />
                       <p className="mb-1 text-lg">견적서</p>
                       <p className="mb-4 text-lg">pdf, jpg, png 첨부 가능</p>

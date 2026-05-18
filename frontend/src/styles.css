@@ -99,6 +99,34 @@
     border-style: dashed;
   }
 
+  .eps-estimate-upload,
+  .eps-estimate-upload .ant-upload,
+  .eps-estimate-upload .ant-upload-drag,
+  .eps-fill-form-item .ant-form-item-row,
+  .eps-fill-form-item .ant-form-item-control,
+  .eps-fill-form-item .ant-form-item-control-input,
+  .eps-fill-form-item .ant-form-item-control-input-content {
+    @apply !h-full;
+  }
+
+  .eps-fill-textarea {
+    @apply !min-h-[264px] resize-y;
+  }
+
+  .eps-info-descriptions .ant-descriptions-item-label {
+    @apply !w-[120px] !text-gray-500;
+  }
+
+  .eps-info-descriptions .ant-descriptions-item-content {
+    @apply !text-gray-900;
+  }
+
+  .eps-static-addon,
+  .eps-static-addon:hover,
+  .eps-static-addon:focus {
+    @apply !border-gray-300 !bg-gray-50 !shadow-none;
+  }
+
   .login-visual::before {
     background-image: url("/images/login-bg.png");
     background-position: center;
