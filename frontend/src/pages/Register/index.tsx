@@ -180,7 +180,7 @@ const Register = () => {
           <TermsAgreementBox />
 
           <div className="mt-8 flex justify-end">
-            <Button type="button" iconRight={<ArrowRightOutlined />} onClick={agreeAndGoNext}>
+            <Button className="text-lg" type="button" iconRight={<ArrowRightOutlined />} onClick={agreeAndGoNext}>
               동의
             </Button>
           </div>

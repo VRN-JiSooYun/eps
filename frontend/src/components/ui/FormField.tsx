@@ -13,7 +13,7 @@ export function FormField({ className = "", error, id, label, requiredMark = fal
 
   return (
     <Form.Item
-      className="mb-0"
+      className="eps-register-field mb-0"
       colon={false}
       help={error}
       label={

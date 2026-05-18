@@ -127,6 +127,32 @@
     @apply !border-gray-300 !bg-gray-50 !shadow-none;
   }
 
+  .eps-register-field .ant-form-item-row {
+    @apply !block;
+  }
+
+  .eps-register-field .ant-form-item-label {
+    @apply !pb-2 !text-left;
+  }
+
+  .eps-register-field .ant-form-item-label > label {
+    @apply !h-auto;
+  }
+
+  .eps-register-field .ant-form-item-control {
+    @apply !max-w-none;
+  }
+
+  .eps-supplier-field-height.ant-input,
+  .eps-supplier-field-height.ant-input-affix-wrapper,
+  .eps-supplier-field-height.ant-select {
+    @apply !h-11;
+  }
+
+  .eps-supplier-field-height.ant-select .ant-select-selector {
+    @apply !h-11 !items-center;
+  }
+
   .login-visual::before {
     background-image: url("/images/login-bg.png");
     background-position: center;

@@ -9,6 +9,7 @@ const bankOptions = [
   { label: "은행 1", value: "bank1" },
   { label: "은행 2", value: "bank2" }
 ];
+const supplierInputClassName = "eps-supplier-field-height !h-11";
 
 type SupplierInfoFormProps = {
   errors: Partial<Record<keyof SupplierInfoValues | keyof SupplierRegisterFiles, string>>;
@@ -24,8 +25,9 @@ export function SupplierInfoForm({ errors, files, onBack, onChange, onFileChange
   return (
     <div className="mt-4">
       <div className="mb-12 grid grid-cols-1 gap-x-8 gap-y-8 md:grid-cols-3">
-        <FormField error={errors.companyName} label="업체명" name="companyName" onChange={(event) => onChange("companyName", event.target.value)} requiredMark type="text" value={values.companyName} />
+        <FormField className={supplierInputClassName} error={errors.companyName} label="업체명" name="companyName" onChange={(event) => onChange("companyName", event.target.value)} requiredMark type="text" value={values.companyName} />
         <FormField
+          className={supplierInputClassName}
           error={errors.businessRegistrationNumber}
           label="사업자등록번호"
           name="businessRegistrationNumber"
@@ -35,6 +37,7 @@ export function SupplierInfoForm({ errors, files, onBack, onChange, onFileChange
           value={values.businessRegistrationNumber}
         />
         <FormField
+          className={supplierInputClassName}
           error={errors.headOfficePhone}
           label="본사전화번호"
           name="headOfficePhone"
@@ -43,11 +46,12 @@ export function SupplierInfoForm({ errors, files, onBack, onChange, onFileChange
           type="tel"
           value={values.headOfficePhone}
         />
-        <SelectField error={errors.bankName} label="거래은행" name="bankName" onChange={(value) => onChange("bankName", value)} options={bankOptions} requiredMark value={values.bankName} />
-        <FormField error={errors.accountHolder} label="예금주" name="accountHolder" onChange={(event) => onChange("accountHolder", event.target.value)} requiredMark type="text" value={values.accountHolder} />
-        <FormField error={errors.accountNumber} label="계좌번호" name="accountNumber" onChange={(event) => onChange("accountNumber", event.target.value)} requiredMark type="text" value={values.accountNumber} />
-        <FormField error={errors.password} label="비밀번호" name="password" onChange={(event) => onChange("password", event.target.value)} requiredMark type="password" value={values.password} />
+        <SelectField className={supplierInputClassName} error={errors.bankName} label="거래은행" name="bankName" onChange={(value) => onChange("bankName", value)} options={bankOptions} requiredMark value={values.bankName} />
+        <FormField className={supplierInputClassName} error={errors.accountHolder} label="예금주" name="accountHolder" onChange={(event) => onChange("accountHolder", event.target.value)} requiredMark type="text" value={values.accountHolder} />
+        <FormField className={supplierInputClassName} error={errors.accountNumber} label="계좌번호" name="accountNumber" onChange={(event) => onChange("accountNumber", event.target.value)} requiredMark type="text" value={values.accountNumber} />
+        <FormField className={supplierInputClassName} error={errors.password} label="비밀번호" name="password" onChange={(event) => onChange("password", event.target.value)} requiredMark type="password" value={values.password} />
         <FormField
+          className={supplierInputClassName}
           error={errors.passwordConfirm}
           label="비밀번호 확인"
           name="passwordConfirm"

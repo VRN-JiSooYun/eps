@@ -17,7 +17,7 @@ export function Button({ children, className = "", iconLeft, iconRight, type = "
 
   return (
     <AntButton
-      className={`inline-flex min-h-11 items-center justify-center rounded px-8 py-3 font-medium ${variantClass} ${className}`}
+      className={`inline-flex !h-11 !min-w-28 items-center justify-center rounded !px-6 !py-0 font-medium leading-none ${variantClass} ${className}`}
       htmlType={type}
       type={variant === "primary" ? "primary" : "text"}
       {...props}

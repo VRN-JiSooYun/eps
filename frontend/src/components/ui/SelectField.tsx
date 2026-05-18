@@ -6,6 +6,7 @@ type Option = {
 };
 
 type SelectFieldProps = {
+  className?: string;
   error?: string;
   label: string;
   name?: string;
@@ -15,10 +16,10 @@ type SelectFieldProps = {
   value: string;
 };
 
-export function SelectField({ error, label, onChange, options, requiredMark = false, value }: SelectFieldProps) {
+export function SelectField({ className = "", error, label, onChange, options, requiredMark = false, value }: SelectFieldProps) {
   return (
     <Form.Item
-      className="mb-0"
+      className="eps-register-field mb-0"
       colon={false}
       help={error}
       label={
@@ -28,7 +29,7 @@ export function SelectField({ error, label, onChange, options, requiredMark = fa
       }
       validateStatus={error ? "error" : undefined}
     >
-      <Select allowClear options={options} onChange={(nextValue) => onChange(nextValue ?? "")} value={value || undefined} />
+      <Select allowClear className={className} options={options} onChange={(nextValue) => onChange(nextValue ?? "")} value={value || undefined} />
     </Form.Item>
   );
 }
