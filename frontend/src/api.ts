@@ -1,4 +1,4 @@
-import type { AuthResponse, LoginPayload, QuoteRequest, RegisterPayload, SupplierRegisterPayload, SupplierRegisterResponse } from "./types";
+import type { AuthResponse, EstimateRequest, LoginPayload, RegisterPayload, SupplierRegisterPayload, SupplierRegisterResponse } from "./types";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api";
 
@@ -47,8 +47,8 @@ export function login(payload: LoginPayload) {
   });
 }
 
-export function listPendingQuoteRequests(token: string) {
-  return request<{ quoteRequests: QuoteRequest[] }>("/quote-requests/pending", {
+export function listEstimateRequests(token: string) {
+  return request<{ estimateRequests: EstimateRequest[] }>("/estimate-requests", {
     headers: {
       Authorization: `Bearer ${token}`
     }

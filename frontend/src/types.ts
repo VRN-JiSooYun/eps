@@ -22,15 +22,23 @@ export type AuthResponse = {
   supplier: Supplier;
 };
 
-export type QuoteRequest = {
-  id: string;
-  requestNumber: string;
-  title: string;
-  description: string;
-  status: "pending" | "received" | "completed";
-  dueDate: string;
-  buyerName: string;
-  createdAt: string;
+export type EstimateRequest = {
+  id: number;
+  bid: boolean;
+  dateCreated: string;
+  dateDiscard: string | null;
+  productName: string;
+  casNo: string;
+  supplierId: number | null;
+  catalogNo: string;
+  unitValue: number;
+  unitId: number | null;
+  unit: string | number | null;
+  count: number;
+  status: string | null;
+  purchaseRequest: number | null;
+  note: string;
+  discard: boolean;
 };
 
 export type RegisterPayload = {

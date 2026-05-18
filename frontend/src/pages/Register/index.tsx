@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowRight } from "lucide-react";
+import { ArrowRightOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import { supplierRegister } from "../../api";
 import { ContactInfoForm } from "../../components/register/ContactInfoForm";
@@ -180,7 +180,7 @@ const Register = () => {
           <TermsAgreementBox />
 
           <div className="mt-8 flex justify-end">
-            <Button type="button" iconRight={<ArrowRight size={24} strokeWidth={2} />} onClick={agreeAndGoNext}>
+            <Button type="button" iconRight={<ArrowRightOutlined />} onClick={agreeAndGoNext}>
               동의
             </Button>
           </div>

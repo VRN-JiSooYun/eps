@@ -1,19 +1,21 @@
 import { useEffect, useRef, useState } from "react";
-import { Bell, ChevronDown, ChevronLeft, ChevronRight, CircleHelp, LogOut } from "lucide-react";
-import type { QuoteRequest, Supplier } from "../../types";
+import { BellOutlined, DownOutlined, LogoutOutlined, QuestionCircleOutlined } from "@ant-design/icons";
+import { Button as AntButton, Table } from "antd";
+import type { TableColumnsType } from "antd";
+import type { EstimateRequest, Supplier } from "../../types";
 
 type MainPageProps = {
   loading: boolean;
   message: string;
   onLogout: () => void;
-  quotes: QuoteRequest[];
+  estimateRequests: EstimateRequest[];
   supplier: Supplier;
 };
 
 type SectionConfig = {
   count: number;
   emptyText: string;
-  rows: QuoteRequest[];
+  rows: EstimateRequest[];
   title: string;
   type: "pending" | "completed" | "selecting";
 };
@@ -21,52 +23,59 @@ type SectionConfig = {
 const tabs = ["견적대기", "견적완료", "선정중", "납품요청", "배송중", "납품완료"];
 const secondaryTabs = ["미선정", "주문취소"];
 const STICKY_HEIGHT = 180;
+const ROWS_PER_PAGE = 5;
 
-export function MainPage({ loading, message, onLogout, quotes, supplier }: MainPageProps) {
+export function MainPage({ estimateRequests, loading, message, onLogout, supplier }: MainPageProps) {
   const [selectedTab, setSelectedTab] = useState(tabs[0]);
   const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
-  const pendingCount = quotes.length;
+  const pendingRows = estimateRequests.filter((request) => isRequestStatus(request, ["", "pending"]));
+  const completedRows = estimateRequests.filter((request) => isRequestStatus(request, ["completed"]));
+  const selectingRows = estimateRequests.filter((request) => isRequestStatus(request, ["selecting"]));
+  const deliveryRequestedRows = estimateRequests.filter((request) => isRequestStatus(request, ["delivery_requested", "delivery-requested", "납품요청"]));
+  const shippingRows = estimateRequests.filter((request) => isRequestStatus(request, ["shipping", "배송중"]));
+  const deliveredRows = estimateRequests.filter((request) => isRequestStatus(request, ["delivered", "납품완료"]));
+  const pendingCount = pendingRows.length;
   const displayName = supplier.contactName || supplier.companyName || supplier.email;
   const sections: SectionConfig[] = [
     {
       count: pendingCount,
       emptyText: "대기 중인 견적 요청이 없습니다.",
-      rows: quotes,
+      rows: pendingRows,
       title: "견적대기",
       type: "pending"
     },
     {
-      count: 0,
+      count: completedRows.length,
       emptyText: "완료된 견적이 없습니다.",
-      rows: [],
+      rows: completedRows,
       title: "견적완료",
       type: "completed"
     },
     {
-      count: 0,
+      count: selectingRows.length,
       emptyText: "선정 중인 견적이 없습니다.",
-      rows: [],
+      rows: selectingRows,
       title: "선정중",
       type: "selecting"
     },
     {
-      count: 0,
+      count: deliveryRequestedRows.length,
       emptyText: "납품요청 중인 견적이 없습니다.",
-      rows: [],
+      rows: deliveryRequestedRows,
       title: "납품요청",
       type: "selecting"
     },
     {
-      count: 0,
+      count: shippingRows.length,
       emptyText: "배송 중인 견적이 없습니다.",
-      rows: [],
+      rows: shippingRows,
       title: "배송중",
       type: "selecting"
     },
     {
-      count: 0,
+      count: deliveredRows.length,
       emptyText: "납품 완료된 견적이 없습니다.",
-      rows: [],
+      rows: deliveredRows,
       title: "납품완료",
       type: "selecting"
     }
@@ -107,7 +116,7 @@ export function MainPage({ loading, message, onLogout, quotes, supplier }: MainP
       window.removeEventListener("scroll", requestUpdate);
       window.removeEventListener("resize", requestUpdate);
     };
-  }, [loading, quotes]);
+  }, [loading, estimateRequests]);
 
   useEffect(() => {
     const lastSection = sections[sections.length - 1];
@@ -126,7 +135,7 @@ export function MainPage({ loading, message, onLogout, quotes, supplier }: MainP
     updateMargin();
     window.addEventListener("resize", updateMargin);
     return () => window.removeEventListener("resize", updateMargin);
-  }, [quotes]);
+  }, [estimateRequests]);
 
   return (
     <main className="flex min-h-screen flex-col bg-[#F3F4F6] font-sans text-gray-800">
@@ -141,13 +150,13 @@ export function MainPage({ loading, message, onLogout, quotes, supplier }: MainP
 
         <div className="flex items-center gap-5">
           <button className="relative transition-colors hover:text-gray-200" type="button" aria-label="알림" title="알림">
-            <Bell className="h-5 w-5" />
+            <BellOutlined className="text-xl" />
             {pendingCount > 0 ? <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-white" /> : null}
           </button>
           <button className="flex items-center transition-colors hover:text-gray-200" type="button" onClick={onLogout} title="로그아웃">
             <span className="mr-2 font-medium">{displayName}님</span>
-            <ChevronDown className="h-4 w-4" />
-            <LogOut className="ml-3 h-5 w-5" />
+            <DownOutlined className="text-sm" />
+            <LogoutOutlined className="ml-3 text-xl" />
           </button>
         </div>
       </header>
@@ -155,20 +164,22 @@ export function MainPage({ loading, message, onLogout, quotes, supplier }: MainP
       <nav className="sticky top-[64px] z-40 border-b border-gray-200 bg-white px-6">
         <div className="flex items-end justify-between overflow-x-auto">
           <ul className="flex min-w-max space-x-8 pt-4 text-lg font-bold text-gray-500">
-            {tabs.map((tab, index) => (
-              <li
-                onClick={() => scrollToSection(tab)}
-                className={`group flex cursor-pointer items-center border-b-4 pb-3 transition-colors ${
-                  selectedTab === tab
-                    ? "border-[#E75A22] text-[#E75A22]"
-                    : "border-transparent hover:border-gray-300 hover:text-gray-700"
-                }`}
-                key={tab}
-              >
-                {tab}
-                {/* {index === 0 ? <CountBadge active={selectedTab === tab} count={pendingCount} className="ml-2 h-6 w-6 text-xs" /> : null} */}
-              </li>
-            ))}
+            {tabs.map((tab) => {
+              const isSelected = selectedTab === tab;
+              const section = sections.find((item) => item.title === tab);
+              return (
+                <li
+                  onClick={() => scrollToSection(tab)}
+                  className={`group flex cursor-pointer items-center border-b-4 pb-3 transition-colors ${
+                    isSelected ? "border-[#E75A22] text-[#E75A22]" : "border-transparent hover:border-gray-300 hover:text-gray-700"
+                  }`}
+                  key={tab}
+                >
+                  {tab}
+                  <CountBadge active={isSelected} count={section?.count ?? 0} className="ml-2 h-6 w-6 text-xs" />
+                </li>
+              );
+            })}
           </ul>
           <ul className="flex min-w-max space-x-6 pb-3 text-lg font-bold text-gray-400">
             {secondaryTabs.map((tab) => (
@@ -184,14 +195,13 @@ export function MainPage({ loading, message, onLogout, quotes, supplier }: MainP
         {message ? <p className="mb-5 rounded-md bg-[#FCECDD] px-4 py-3 text-sm font-medium text-[#E75A22]">{message}</p> : null}
 
         {sections.map((section) => (
-          <QuoteSection
+          <EstimateRequestSection
             key={section.title}
             loading={section.type === "pending" ? loading : false}
             section={section}
             sectionRef={(element) => {
               sectionRefs.current[section.title] = element;
             }}
-            supplier={supplier}
           />
         ))}
       </div>
@@ -199,17 +209,82 @@ export function MainPage({ loading, message, onLogout, quotes, supplier }: MainP
   );
 }
 
-function QuoteSection({
+function EstimateRequestSection({
   loading,
   section,
-  sectionRef,
-  supplier
+  sectionRef
 }: {
   loading: boolean;
   section: SectionConfig;
   sectionRef: (element: HTMLElement | null) => void;
-  supplier: Supplier;
 }) {
+  const columns: TableColumnsType<EstimateRequest> = [
+    {
+      align: "center",
+      render: () => <span className="rounded-full bg-[#FCECDD] px-3 py-1 text-xs font-semibold text-[#E75A22]">{section.type === "pending" ? "접수" : "상세"}</span>,
+      title: "",
+      width: 96
+    },
+    {
+      align: "center",
+      render: (_, estimateRequest) => formatEstimateRequestNumber(estimateRequest),
+      title: "주문번호"
+    },
+    {
+      align: "center",
+      render: (_, estimateRequest) => formatShortDate(estimateRequest.dateDiscard),
+      title: "마감날짜"
+    },
+    {
+      align: "center",
+      render: (_, estimateRequest) => formatUnit(estimateRequest),
+      title: "단위"
+    },
+    {
+      align: "center",
+      dataIndex: "count",
+      title: "수량"
+    },
+    {
+      align: "center",
+      render: (_, estimateRequest) => formatSupplier(estimateRequest),
+      title: "Supplier"
+    },
+    {
+      align: "center",
+      render: (_, estimateRequest) => estimateRequest.catalogNo || "-",
+      title: "Catalog No."
+    },
+    {
+      align: "center",
+      render: (_, estimateRequest) => estimateRequest.casNo || "-",
+      title: "CAS No."
+    },
+    {
+      render: (_, estimateRequest) => (
+        <div className="max-w-[240px]" title={estimateRequest.productName}>
+          <p className="truncate font-medium">{estimateRequest.productName}</p>
+          {estimateRequest.note ? <p className="mt-1 truncate text-xs text-gray-500">{estimateRequest.note}</p> : null}
+        </div>
+      ),
+      title: "상품명",
+      width: 260
+    },
+    {
+      align: "center",
+      render: () =>
+        section.type === "pending" ? (
+          <AntButton className="min-w-20" shape="round" size="small">
+            요청
+          </AntButton>
+        ) : (
+          <span className="text-gray-500">-</span>
+        ),
+      title: <SectionActionLabel type={section.type} />,
+      width: 112
+    }
+  ];
+
   return (
     <section className="mb-12 scroll-mt-[148px]" data-section-title={section.title} ref={sectionRef}>
       <h2 className="mb-4 flex items-center text-2xl font-bold text-gray-800">
@@ -218,83 +293,21 @@ function QuoteSection({
       </h2>
 
       <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[1040px] text-center text-sm text-gray-700">
-            <thead className="bg-[#E75A22] font-medium text-white">
-              <tr>
-                <th className="w-24 px-4 py-3"></th> {/* 액션 */}
-                <th className="px-4 py-3">주문번호</th>
-                <th className="px-4 py-3">마감날짜</th>
-                <th className="px-4 py-3">단위</th>
-                <th className="px-4 py-3">수량</th>
-                <th className="px-4 py-3">Supplier</th>
-                <th className="px-4 py-3">Catalog No.</th>
-                <th className="px-4 py-3">CAS No.</th>
-                <th className="w-64 px-4 py-3 text-left">상품명</th>
-                <th className="w-28 px-4 py-3">
-                  <SectionActionLabel type={section.type} />
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100 bg-white">
-              {loading ? (
-                <tr>
-                  <td className="px-4 py-8 text-gray-500" colSpan={10}>
-                    불러오는 중입니다.
-                  </td>
-                </tr>
-              ) : null}
-
-              {!loading && section.rows.length === 0 ? (
-                <tr>
-                  <td className="px-4 py-8 text-gray-500" colSpan={10}>
-                    {section.emptyText}
-                  </td>
-                </tr>
-              ) : null}
-
-              {!loading
-                ? section.rows.map((quote) => (
-                    <tr className="h-16 transition-colors hover:bg-gray-50" key={quote.id}>
-                      <td className="px-4 py-2">
-                        <span className="rounded-full bg-[#FCECDD] px-3 py-1 text-xs font-semibold text-[#E75A22]">{section.type === "pending" ? "접수" : "상세"}</span>
-                      </td>
-                      <td className="px-4 py-2">{quote.requestNumber}</td>
-                      <td className="px-4 py-2">{formatShortDate(quote.dueDate)}</td>
-                      <td className="px-4 py-2">-</td>
-                      <td className="px-4 py-2">-</td>
-                      <td className="px-4 py-2">{supplier.companyName}</td>
-                      <td className="px-4 py-2">-</td>
-                      <td className="px-4 py-2">-</td>
-                      <td className="max-w-[240px] px-4 py-2 text-left" title={quote.title}>
-                        <p className="truncate font-medium">{quote.title}</p>
-                        {quote.description ? <p className="mt-1 truncate text-xs text-gray-500">{quote.description}</p> : null}
-                      </td>
-                      <td className="px-4 py-2">
-                        {section.type === "pending" ? (
-                          <button className="w-full rounded-full bg-gray-100 px-4 py-1.5 text-sm text-gray-700 transition-colors hover:bg-gray-200" type="button">
-                            요청
-                          </button>
-                        ) : (
-                          <span className="text-gray-500">-</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))
-                : null}
-            </tbody>
-          </table>
-        </div>
-
-        <div className="flex items-center justify-end border-t border-gray-100 bg-white px-4 py-3 text-sm text-gray-600">
-          <button className="p-1 text-gray-400 transition-colors hover:text-gray-600" type="button" aria-label="이전 페이지">
-            <ChevronLeft className="h-4 w-4" />
-          </button>
-          <span className="mx-3">1 / 1</span>
-          <button className="p-1 text-gray-400 transition-colors hover:text-gray-600" type="button" aria-label="다음 페이지">
-            <ChevronRight className="h-4 w-4" />
-          </button>
-        </div>
+        <Table
+          className="eps-main-table"
+          columns={columns}
+          dataSource={section.rows}
+          loading={loading}
+          locale={{ emptyText: section.emptyText }}
+          pagination={{
+            pageSize: ROWS_PER_PAGE,
+            position: ["bottomRight"],
+            showSizeChanger: false
+          }}
+          size="small"
+          rowKey="id"
+          scroll={{ x: 1040 }}
+        />
       </div>
     </section>
   );
@@ -308,7 +321,7 @@ function SectionActionLabel({ type }: { type: SectionConfig["type"] }) {
     return (
       <span className="inline-flex items-center justify-center">
         상태
-        <CircleHelp className="ml-1 h-3.5 w-3.5 opacity-75" />
+        <QuestionCircleOutlined className="ml-1 text-xs opacity-75" />
       </span>
     );
   }
@@ -316,12 +329,40 @@ function SectionActionLabel({ type }: { type: SectionConfig["type"] }) {
 }
 
 function CountBadge({ active = true, className, count }: { active?: boolean; className?: string; count: number }) {
-  const colorClass = active ? "bg-[#E75A22]" : "bg-gray-300 group-hover:bg-gray-400";
+  const colorClass = active ? "bg-[#E75A22] opacity-100" : "bg-gray-400 opacity-0 group-hover:opacity-100";
 
-  return <span className={`flex items-center justify-center rounded-full font-semibold text-white transition-colors ${colorClass} ${className ?? ""}`}>{count}</span>;
+  return <span className={`flex items-center justify-center rounded-full font-semibold text-white transition-opacity ${colorClass} ${className ?? ""}`}>{count}</span>;
 }
 
-function formatShortDate(value: string) {
+function isRequestStatus(request: EstimateRequest, statuses: string[]) {
+  const status = (request.status ?? "").trim().toLowerCase();
+  return statuses.map((item) => item.toLowerCase()).includes(status);
+}
+
+function formatEstimateRequestNumber(request: EstimateRequest) {
+  if (request.purchaseRequest) {
+    return request.purchaseRequest;
+  }
+  return `ER-${String(request.id).padStart(6, "0")}`;
+}
+
+function formatSupplier(request: EstimateRequest) {
+  return request.supplierId ? `Supplier #${request.supplierId}` : "-";
+}
+
+function formatUnit(request: EstimateRequest) {
+  const unit = request.unit == null ? "" : String(request.unit).trim();
+  if (!unit) {
+    return "-";
+  }
+  return `${request.unitValue} ${unit}`;
+}
+
+function formatShortDate(value: string | null) {
+  if (!value) {
+    return "-";
+  }
+
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
     return "-";

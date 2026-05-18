@@ -1,6 +1,7 @@
-import { InputHTMLAttributes } from "react";
+import { Form, Input } from "antd";
+import type { InputProps } from "antd";
 
-type FormFieldProps = InputHTMLAttributes<HTMLInputElement> & {
+type FormFieldProps = InputProps & {
   error?: string;
   label: string;
   requiredMark?: boolean;
@@ -8,26 +9,21 @@ type FormFieldProps = InputHTMLAttributes<HTMLInputElement> & {
 
 export function FormField({ className = "", error, id, label, requiredMark = false, ...props }: FormFieldProps) {
   const fieldId = id ?? props.name ?? label;
+  const input = props.type === "password" ? <Input.Password id={fieldId} className={className} {...props} /> : <Input id={fieldId} className={className} {...props} />;
 
   return (
-    <label className="block">
-      <span className="mb-2 block text-base font-medium text-gray-900">
-        {label} {requiredMark ? <span className="text-voronoi-orange">*</span> : null}
-      </span>
-      <input
-        id={fieldId}
-        className={`w-full rounded border bg-white px-4 py-3 text-gray-900 outline-none transition-colors focus:border-voronoi-orange focus:ring-1 focus:ring-voronoi-orange ${
-          error ? "border-red-400" : "border-gray-200"
-        } ${className}`}
-        aria-invalid={Boolean(error)}
-        aria-describedby={error ? `${fieldId}-error` : undefined}
-        {...props}
-      />
-      {error ? (
-        <span className="mt-2 block text-sm text-red-600" id={`${fieldId}-error`}>
-          {error}
+    <Form.Item
+      className="mb-0"
+      colon={false}
+      help={error}
+      label={
+        <span className="text-base font-medium text-gray-900">
+          {label} {requiredMark ? <span className="text-voronoi-orange">*</span> : null}
         </span>
-      ) : null}
-    </label>
+      }
+      validateStatus={error ? "error" : undefined}
+    >
+      {input}
+    </Form.Item>
   );
 }

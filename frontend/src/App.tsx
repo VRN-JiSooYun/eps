@@ -1,9 +1,10 @@
 import { FormEvent, useEffect, useState } from "react";
+import { Button, Checkbox, ConfigProvider, Input } from "antd";
 import { BrowserRouter, Navigate, Route, Routes, useNavigate } from "react-router-dom";
-import { listPendingQuoteRequests, login } from "./api";
+import { listEstimateRequests, login } from "./api";
 import { MainPage } from "./pages/Main";
 import Register from "./pages/Register";
-import type { AuthResponse, QuoteRequest, Supplier } from "./types";
+import type { AuthResponse, EstimateRequest, Supplier } from "./types";
 
 const tokenKey = "eps.auth.token";
 const supplierKey = "eps.auth.supplier";
@@ -11,9 +12,24 @@ const rememberedEmailKey = "eps.auth.rememberedEmail";
 
 export function App() {
   return (
-    <BrowserRouter>
-      <AppRoutes />
-    </BrowserRouter>
+    <ConfigProvider
+      theme={{
+        components: {
+          Table: {
+            headerSplitColor: "transparent"
+          }
+        },
+        token: {
+          borderRadius: 6,
+          colorPrimary: "#E85324",
+          fontFamily: 'Pretendard, "Noto Sans KR", Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
+        }
+      }}
+    >
+      <BrowserRouter>
+        <AppRoutes />
+      </BrowserRouter>
+    </ConfigProvider>
   );
 }
 
@@ -23,7 +39,7 @@ function AppRoutes() {
     const raw = localStorage.getItem(supplierKey);
     return raw ? (JSON.parse(raw) as Supplier) : null;
   });
-  const [quotes, setQuotes] = useState<QuoteRequest[]>([]);
+  const [estimateRequests, setEstimateRequests] = useState<EstimateRequest[]>([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const navigate = useNavigate();
@@ -34,8 +50,8 @@ function AppRoutes() {
     if (!token) return;
 
     setLoading(true);
-    listPendingQuoteRequests(token)
-      .then((data) => setQuotes(data.quoteRequests))
+    listEstimateRequests(token)
+      .then((data) => setEstimateRequests(data.estimateRequests))
       .catch((error: Error) => {
         setMessage(error.message);
         clearSession();
@@ -56,7 +72,7 @@ function AppRoutes() {
     localStorage.removeItem(supplierKey);
     setToken("");
     setSupplier(null);
-    setQuotes([]);
+    setEstimateRequests([]);
     navigate("/");
   }
 
@@ -66,7 +82,7 @@ function AppRoutes() {
         path="/"
         element={
           isAuthed && supplier ? (
-            <MainPage supplier={supplier} quotes={quotes} loading={loading} message={message} onLogout={clearSession} />
+            <MainPage supplier={supplier} estimateRequests={estimateRequests} loading={loading} message={message} onLogout={clearSession} />
           ) : (
             <AuthPanel onRegisterClick={() => navigate("/register")} onAuth={saveSession} message={message} setMessage={setMessage} />
           )
@@ -128,10 +144,7 @@ function AuthPanel({
           </header>
 
           <form className="space-y-4" onSubmit={submit}>
-            <label className="sr-only" htmlFor="email">
-              아이디
-            </label>
-            <input
+            <Input
               className="login-input"
               id="email"
               type="email"
@@ -141,13 +154,9 @@ function AuthPanel({
               required
             />
 
-            <label className="sr-only" htmlFor="password">
-              비밀번호
-            </label>
-            <input
-              className="login-input"
+            <Input.Password
+              className="login-input !flex !items-center"
               id="password"
-              type="password"
               minLength={8}
               value={password}
               onChange={(event) => setPassword(event.target.value)}
@@ -156,38 +165,37 @@ function AuthPanel({
             />
 
             <div className="flex items-center justify-between py-2">
-              <label className="flex cursor-pointer items-center text-sm text-voronoi-gray-800">
-                <input
-                  className="h-4 w-4 cursor-pointer rounded border-voronoi-gray-300 text-voronoi-orange accent-voronoi-orange focus:ring-voronoi-orange"
-                  type="checkbox"
-                  checked={rememberEmail}
-                  onChange={(event) => setRememberEmail(event.target.checked)}
-                />
-                <span className="ml-2">아이디 저장</span>
-              </label>
+              <Checkbox checked={rememberEmail} onChange={(event) => setRememberEmail(event.target.checked)}>
+                아이디 저장
+              </Checkbox>
 
-              <button className="text-sm text-voronoi-gray-800 transition hover:text-voronoi-orange" type="button">
+              <Button
+                className="!text-voronoi-gray-800 transition hover:!text-voronoi-orange"
+                type="text"
+                size="small"
+                onClick={() => setMessage("관리자에게 문의하여 비밀번호를 초기화하세요.")}
+              >
                 비밀번호 초기화
-              </button>
+              </Button>
             </div>
 
             {message ? <p className="rounded-md bg-voronoi-orange/10 px-3 py-2 text-sm text-voronoi-orange">{message}</p> : null}
 
             <div className="pt-2">
-              <button className="login-submit" disabled={submitting}>
+              <Button className="login-submit" type="primary" htmlType="submit" loading={submitting} disabled={submitting}>
                 {submitting ? "처리 중" : "로그인"}
-              </button>
+              </Button>
             </div>
           </form>
 
           <div className="mt-8">
-            <button
-              className="text-sm text-voronoi-gray-500 transition hover:text-voronoi-gray-900"
-              type="button"
+            <Button
+              className="text-sm !text-voronoi-gray-500 transition hover:!text-voronoi-gray-900"
+              type="text"
               onClick={onRegisterClick}
             >
               공급업체등록
-            </button>
+            </Button>
           </div>
         </div>
       </section>

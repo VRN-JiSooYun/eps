@@ -2,7 +2,7 @@
 External Procurement System. For Supplier or Vendor of Voronoi Inc.
 
 ## 기술 스택
- - Frontend: React, TypeScript, Tailwind CSS
+ - Frontend: React, TypeScript, Ant Design, Tailwind CSS customization
  - Backend: Golang Echo Framework
  - Database: PostgreSQL
  - Authentication: JWT (JSON Web Tokens)

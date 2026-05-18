@@ -46,8 +46,52 @@
     @apply relative block w-full appearance-none rounded-md border-none bg-gray-50 px-4 py-4 text-voronoi-gray-900 placeholder-gray-400 outline-none transition focus:z-10 focus:ring-1 focus:ring-voronoi-orange sm:text-sm;
   }
 
+  .login-input:focus,
+  .login-input.ant-input-affix-wrapper-focused {
+    @apply !z-10 !ring-1 !ring-voronoi-orange;
+    box-shadow: 0 0 0 1px #e85324 !important;
+  }
+
+  .login-input:-webkit-autofill,
+  .login-input .ant-input:-webkit-autofill {
+    box-shadow: 0 0 0 1000px #e8f0fe inset;
+    -webkit-text-fill-color: #212121;
+  }
+
+  .login-input.ant-input-affix-wrapper:has(.ant-input:-webkit-autofill) {
+    background-color: #e8f0fe;
+  }
+
   .login-submit {
-    @apply relative flex w-full justify-center rounded-md border border-transparent bg-voronoi-orange px-4 py-4 text-lg font-medium text-white transition-colors hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-voronoi-orange focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60;
+    @apply relative flex h-auto w-full justify-center rounded-md border border-transparent bg-voronoi-orange px-4 py-4 text-lg font-medium text-white transition-colors hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-voronoi-orange focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60;
+  }
+
+  .eps-ant-primary-button {
+    @apply border-voronoi-orange bg-voronoi-orange text-white shadow-sm hover:!border-voronoi-orange hover:!bg-voronoi-orange/90 hover:!text-white;
+  }
+
+  .eps-ant-ghost-button {
+    @apply bg-transparent text-voronoi-gray-500 hover:!text-voronoi-gray-900;
+  }
+
+  .eps-upload-error .ant-upload-drag {
+    @apply !border-red-400;
+  }
+
+  .eps-main-table .ant-table-thead > tr > th {
+    @apply !bg-[#E75A22] !text-center !font-medium !text-white;
+  }
+
+  .eps-main-table .ant-table-measure-row {
+    @apply !hidden;
+  }
+
+  .eps-main-table .ant-table-tbody > tr:not(.ant-table-measure-row) > td {
+    @apply !py-3 text-center;
+  }
+
+  .eps-main-table .ant-table-tbody > tr:not(.ant-table-measure-row) > td:nth-child(9) {
+    @apply !text-left;
   }
 
   .login-visual::before {

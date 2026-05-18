@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { ArrowLeftOutlined, ArrowRightOutlined } from "@ant-design/icons";
 import { Button } from "../ui/Button";
 import { FormField } from "../ui/FormField";
 import { SelectField } from "../ui/SelectField";
@@ -43,7 +43,7 @@ export function SupplierInfoForm({ errors, files, onBack, onChange, onFileChange
           type="tel"
           value={values.headOfficePhone}
         />
-        <SelectField error={errors.bankName} label="거래은행" name="bankName" onChange={(event) => onChange("bankName", event.target.value)} options={bankOptions} requiredMark value={values.bankName} />
+        <SelectField error={errors.bankName} label="거래은행" name="bankName" onChange={(value) => onChange("bankName", value)} options={bankOptions} requiredMark value={values.bankName} />
         <FormField error={errors.accountHolder} label="예금주" name="accountHolder" onChange={(event) => onChange("accountHolder", event.target.value)} requiredMark type="text" value={values.accountHolder} />
         <FormField error={errors.accountNumber} label="계좌번호" name="accountNumber" onChange={(event) => onChange("accountNumber", event.target.value)} requiredMark type="text" value={values.accountNumber} />
         <FormField error={errors.password} label="비밀번호" name="password" onChange={(event) => onChange("password", event.target.value)} requiredMark type="password" value={values.password} />
@@ -70,10 +70,10 @@ export function SupplierInfoForm({ errors, files, onBack, onChange, onFileChange
       </section>
 
       <div className="mt-8 flex justify-between border-t border-gray-200 pt-6">
-        <Button type="button" className="text-lg" iconLeft={<ArrowLeft size={18} />} onClick={onBack}>
+        <Button type="button" className="text-lg" iconLeft={<ArrowLeftOutlined />} onClick={onBack}>
           이전
         </Button>
-        <Button type="button" className="text-lg" iconRight={<ArrowRight size={18} />} onClick={onNext}>
+        <Button type="button" className="text-lg" iconRight={<ArrowRightOutlined />} onClick={onNext}>
           다음
         </Button>
       </div>
