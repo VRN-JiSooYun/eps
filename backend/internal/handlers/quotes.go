@@ -23,6 +23,11 @@ func (h QuoteHandler) ListPending(c echo.Context) error {
 	ctx, cancel := context.WithTimeout(c.Request().Context(), 5*time.Second)
 	defer cancel()
 
+	vendorID, err := authenticatedVendorID(c)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusUnauthorized, "invalid authenticated vendor")
+	}
+
 	rows, err := h.db.Query(ctx, `
 		SELECT
 			r.id::text,
@@ -37,8 +42,9 @@ func (h QuoteHandler) ListPending(c echo.Context) error {
 		LEFT JOIN supplier s ON s.id = r.supplier_id
 		WHERE r.discard = false
 			AND (r.status IS NULL OR r.status = '' OR r.status = 'pending')
+			AND (r.bid = true OR s.vendor_id = $1)
 		ORDER BY COALESCE(r.date_discard, r.date_created) ASC, r.date_created DESC
-	`)
+	`, vendorID)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to list quote requests")
 	}

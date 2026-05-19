@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { BellOutlined, CloseOutlined, DownOutlined, FilePdfOutlined, LogoutOutlined, PaperClipOutlined, QuestionCircleOutlined } from "@ant-design/icons";
 import { Button as AntButton, Card, Checkbox, Col, Descriptions, Form, Input, InputNumber, Row, Select, Space, Table, Upload } from "antd";
-import type { InputNumberProps } from "antd";
-import type { TableColumnsType } from "antd";
+import type { GetProp, InputNumberProps, TableColumnsType, TableProps } from "antd";
 import type { EstimateRequest, Supplier } from "../../types";
 import { Modal } from "../../layout/Modal/Modal";
+import { Modal as AntdModal } from "antd";
 
 type MainPageProps = {
   loading: boolean;
@@ -30,11 +30,16 @@ type SupplierContactInfo = {
 };
 
 type SupplierContactInfoKey = keyof SupplierContactInfo;
+type TablePaginationConfig = Exclude<GetProp<TableProps, "pagination">, boolean>;
+type EstimateRequestTableParams = {
+  pagination?: TablePaginationConfig;
+};
 
 const tabs = ["견적대기", "견적완료", "선정중", "납품요청", "배송중", "납품완료"];
 const secondaryTabs = ["미선정", "주문취소"];
 const STICKY_HEIGHT = 180;
 const ROWS_PER_PAGE = 5;
+const PAGE_SIZE_OPTIONS = [5, 10, 20, 50];
 
 const numberFormatter: InputNumberProps<number>["formatter"] = (value) => {
   if (value === undefined || value === null) {
@@ -67,6 +72,8 @@ function formatFileSize(size: number) {
 
 export function MainPage({ estimateRequests, loading, message, onLogout, supplier }: MainPageProps) {
   const [selectedTab, setSelectedTab] = useState(tabs[0]);
+  const [isDirectInput, setIsDirectInput] = useState(false);
+
   const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
   const pendingRows = estimateRequests.filter((request) => isRequestStatus(request, ["", "pending"]));
   const completedRows = estimateRequests.filter((request) => isRequestStatus(request, ["completed"]));
@@ -261,7 +268,47 @@ function EstimateRequestSection({
   sectionRef: (element: HTMLElement | null) => void;
   supplier: Supplier;
 }) {
+  const [selectedEstimate, setselectedEstimate] = useState<EstimateRequest | null>(null);
   const [selectedRequest, setSelectedRequest] = useState<EstimateRequest | null>(null);
+  const [isDirectInput, setIsDirectInput] = useState(false);
+  const [tableParams, setTableParams] = useState<EstimateRequestTableParams>({
+    pagination: {
+      current: 1,
+      pageSize: ROWS_PER_PAGE,
+      pageSizeOptions: PAGE_SIZE_OPTIONS,
+      position: ["bottomRight"],
+      showSizeChanger: true,
+      total: section.rows.length
+    }
+  });
+
+  useEffect(() => {
+    setTableParams((current) => ({
+      ...current,
+      pagination: {
+        ...current.pagination,
+        current: current.pagination?.current ?? 1,
+        pageSize: current.pagination?.pageSize ?? ROWS_PER_PAGE,
+        pageSizeOptions: PAGE_SIZE_OPTIONS,
+        position: ["bottomRight"],
+        showSizeChanger: true,
+        total: section.rows.length
+      }
+    }));
+  }, [section.rows.length]);
+
+  const handleTableChange: TableProps<EstimateRequest>["onChange"] = (pagination) => {
+    setTableParams({
+      pagination: {
+        ...pagination,
+        pageSizeOptions: PAGE_SIZE_OPTIONS,
+        position: ["bottomRight"],
+        showSizeChanger: true,
+        total: section.rows.length
+      }
+    });
+  };
+
   const columns: TableColumnsType<EstimateRequest> = [
     {
       align: "center",
@@ -269,7 +316,7 @@ function EstimateRequestSection({
         <button
           className="rounded-full bg-[#FCECDD] px-3 py-1 text-xs font-semibold text-[#E75A22] transition-colors hover:bg-[#F8D9C5]"
           type="button"
-          onClick={() => setSelectedRequest(estimateRequest)}
+          onClick={() => setselectedEstimate(estimateRequest)}
         >
           {section.type === "pending" ? "접수" : "상세"}
         </button>
@@ -280,36 +327,43 @@ function EstimateRequestSection({
     {
       align: "center",
       render: (_, estimateRequest) => formatEstimateRequestNumber(estimateRequest),
+      sorter: (a, b) => compareText(formatEstimateRequestNumber(a), formatEstimateRequestNumber(b)),
       title: "주문번호"
     },
     {
       align: "center",
       render: (_, estimateRequest) => formatShortDate(estimateRequest.dateDiscard),
+      sorter: (a, b) => compareDate(a.dateDiscard, b.dateDiscard),
       title: "마감날짜"
     },
     {
       align: "center",
       render: (_, estimateRequest) => formatUnit(estimateRequest),
+      sorter: (a, b) => compareText(formatUnit(a), formatUnit(b)),
       title: "단위"
     },
     {
       align: "center",
       dataIndex: "count",
+      sorter: (a, b) => Number(a.count || 0) - Number(b.count || 0),
       title: "수량"
     },
     {
       align: "center",
       render: (_, estimateRequest) => formatSupplier(estimateRequest),
+      sorter: (a, b) => compareText(formatSupplier(a), formatSupplier(b)),
       title: "Supplier"
     },
     {
       align: "center",
       render: (_, estimateRequest) => estimateRequest.catalogNo || "-",
+      sorter: (a, b) => compareText(a.catalogNo, b.catalogNo),
       title: "Catalog No."
     },
     {
       align: "center",
       render: (_, estimateRequest) => estimateRequest.casNo || "-",
+      sorter: (a, b) => compareText(a.casNo, b.casNo),
       title: "CAS No."
     },
     {
@@ -319,14 +373,17 @@ function EstimateRequestSection({
           {estimateRequest.note ? <p className="mt-1 truncate text-xs text-gray-500">{estimateRequest.note}</p> : null}
         </div>
       ),
+      sorter: (a, b) => compareText(a.productName, b.productName),
       title: "상품명",
       width: 260
     },
     {
       align: "center",
-      render: () =>
+      render: (_, estimateRequest) =>
         section.type === "pending" ? (
-          <AntButton className="min-w-20" shape="round" size="small">
+          <AntButton className="min-w-20" shape="round" size="small"
+            onClick={() => setSelectedRequest(estimateRequest)}
+          >
             요청
           </AntButton>
         ) : (
@@ -351,31 +408,78 @@ function EstimateRequestSection({
           dataSource={section.rows}
           loading={loading}
           locale={{ emptyText: section.emptyText }}
-          pagination={{
-            pageSize: ROWS_PER_PAGE,
-            position: ["bottomRight"],
-            showSizeChanger: false
-          }}
+          onChange={handleTableChange}
+          pagination={tableParams.pagination}
           size="small"
           rowKey="id"
           scroll={{ x: 1040 }}
         />
       </div>
       <Modal
-        visible={Boolean(selectedRequest)}
+        visible={Boolean(selectedEstimate)}
         title={
           <span className="text-2xl font-bold text-black">
-            견적서 작성 <span className="ml-3 text-lg font-semibold text-gray-400">{selectedRequest ? formatEstimateRequestNumber(selectedRequest) : ""}</span>
+            견적서 작성 <span className="ml-3 text-lg font-semibold text-gray-400">{selectedEstimate ? formatEstimateRequestNumber(selectedEstimate) : ""}</span>
           </span>
         }
-        onClose={() => setSelectedRequest(null)}
+        onClose={() => setselectedEstimate(null)}
         width={1180}
         content={
-          selectedRequest ? (
-            <EstimateRequestModalContent request={selectedRequest} supplier={supplier} onClose={() => setSelectedRequest(null)} />
+          selectedEstimate ? (
+            <EstimateRequestModalContent request={selectedEstimate} supplier={supplier} onClose={() => setselectedEstimate(null)} />
           ) : null
         }
       />
+      <AntdModal
+        open={Boolean(selectedRequest)}
+        centered
+        title={
+          <div className="flex items-center justify-between">
+            <span className="text-lg font-bold text-white">요청</span>
+            <button
+              className="flex h-6 w-6 items-center justify-center text-white transition hover:text-white/80"
+              type="button"
+              aria-label="요청 모달 닫기"
+              onClick={() => {
+                setSelectedRequest(null);
+                setIsDirectInput(false);
+              }}
+            >
+              <CloseOutlined className="text-lg" />
+            </button>
+          </div>
+        }
+        closable={false}
+        onCancel={() => {
+          setSelectedRequest(null);
+          setIsDirectInput(false);
+        }}
+        width={700}
+        footer={
+          <div className="p-6">
+          <AntButton className="!h-10 !bg-voronoi-orange !px-6 !font-bold" htmlType="submit" size="large" type="primary">
+              전송
+          </AntButton>
+          </div>
+        }
+        className="eps-request-modal"
+        styles={{
+          header: { background: "#E75A22", borderRadius: "10px 10px 0 0", margin: 0, padding: "14px 18px" },
+          body: { minHeight: 240, padding: "24px" },
+        }}
+      >
+        {selectedRequest ? (
+          <div className="flex min-h-[180px] flex-col">
+            <div className="flex flex-col gap-4">
+              <Checkbox className="eps-request-option text-lg text-gray-700">의뢰 마감일을 2일 연장해주세요.</Checkbox>
+              <Checkbox className="eps-request-option text-lg text-gray-700" checked={isDirectInput} onChange={(e) => setIsDirectInput(e.target.checked)}>직접입력</Checkbox>
+              {isDirectInput && (
+                <Input.TextArea className="eps-request-textarea" placeholder="요청사항을 입력해주세요." />
+              )}
+            </div>
+          </div>
+        ) : null}
+      </AntdModal>
     </section>
   );
 }
@@ -706,6 +810,16 @@ function CountBadge({ active = true, className, count }: { active?: boolean; cla
 function isRequestStatus(request: EstimateRequest, statuses: string[]) {
   const status = (request.status ?? "").trim().toLowerCase();
   return statuses.map((item) => item.toLowerCase()).includes(status);
+}
+
+function compareText(a: unknown, b: unknown) {
+  return String(a ?? "").localeCompare(String(b ?? ""), "ko-KR", { numeric: true, sensitivity: "base" });
+}
+
+function compareDate(a: string | null, b: string | null) {
+  const aTime = a ? new Date(a).getTime() : 0;
+  const bTime = b ? new Date(b).getTime() : 0;
+  return (Number.isNaN(aTime) ? 0 : aTime) - (Number.isNaN(bTime) ? 0 : bTime);
 }
 
 function formatEstimateRequestNumber(request: EstimateRequest) {

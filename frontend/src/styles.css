@@ -94,6 +94,18 @@
     @apply !text-left;
   }
 
+  .eps-main-table .ant-pagination {
+    @apply !mb-4 !mr-4 !mt-4;
+  }
+
+  .eps-main-table .ant-pagination-item-active {
+    @apply !border-voronoi-orange;
+  }
+
+  .eps-main-table .ant-pagination-item-active a {
+    @apply !text-voronoi-orange;
+  }
+
   .eps-estimate-upload .ant-upload-drag {
     @apply !border-gray-400 !bg-gray-50;
     border-style: dashed;
@@ -151,6 +163,21 @@
 
   .eps-supplier-field-height.ant-select .ant-select-selector {
     @apply !h-11 !items-center;
+  }
+
+  .eps-request-modal .ant-modal-container {
+    @apply !items-start !justify-center ; 
+    border-radius: 10px;
+    padding: 0;
+  }
+
+  .eps-request-modal .ant-modal-content {
+    @apply !overflow-hidden !p-0;
+    border-radius: 10px;
+  }
+
+  .eps-request-modal .ant-modal-title {
+    @apply !m-0;
   }
 
   .login-visual::before {

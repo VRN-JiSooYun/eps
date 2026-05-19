@@ -2,12 +2,9 @@ package handlers
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
-	"fmt"
 	"log"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
@@ -31,21 +28,23 @@ func (h EstimateRequestHandler) List(c echo.Context) error {
 	ctx, cancel := context.WithTimeout(c.Request().Context(), 5*time.Second)
 	defer cancel()
 
+	vendorID, err := authenticatedVendorID(c)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusUnauthorized, "invalid authenticated vendor")
+	}
+
 	status := strings.TrimSpace(c.QueryParam("status"))
 	includeDiscard := parseBool(c.QueryParam("includeDiscard"))
-	supplierID, err := optionalIntQueryParam(c, "supplierId")
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "supplierId must be an integer")
-	}
 
 	var body []byte
 	err = h.db.QueryRow(ctx, `
 		SELECT COALESCE(json_agg(estimate_request_json(r) ORDER BY r.date_created DESC), '[]'::json)
 		FROM eps_estimate_request r
+		LEFT JOIN supplier s ON s.id = r.supplier_id
 		WHERE ($1::text = '' OR r.status = $1)
-			AND ($2::integer IS NULL OR r.supplier_id = $2)
-			AND ($3::boolean OR r.discard = false)
-	`, status, supplierID, includeDiscard).Scan(&body)
+			AND ($2::boolean OR r.discard = false)
+			AND (r.bid = true OR s.vendor_id = $3::integer)
+	`, status, includeDiscard, vendorID).Scan(&body)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to list estimate requests")
 	}
@@ -58,11 +57,15 @@ func (h EstimateRequestHandler) Get(c echo.Context) error {
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "id must be an integer")
 	}
+	vendorID, err := authenticatedVendorID(c)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusUnauthorized, "invalid authenticated vendor")
+	}
 
 	ctx, cancel := context.WithTimeout(c.Request().Context(), 5*time.Second)
 	defer cancel()
 
-	body, err := h.getByID(ctx, id)
+	body, err := h.getByID(ctx, id, vendorID)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return echo.NewHTTPError(http.StatusNotFound, "estimate request not found")
@@ -231,13 +234,15 @@ func (h EstimateRequestHandler) Delete(c echo.Context) error {
 	return c.NoContent(http.StatusNoContent)
 }
 
-func (h EstimateRequestHandler) getByID(ctx context.Context, id int) ([]byte, error) {
+func (h EstimateRequestHandler) getByID(ctx context.Context, id int, vendorID int) ([]byte, error) {
 	var body []byte
 	err := h.db.QueryRow(ctx, `
 		SELECT estimate_request_json(r)
 		FROM eps_estimate_request r
+		LEFT JOIN supplier s ON s.id = r.supplier_id
 		WHERE r.id = $1
-	`, id).Scan(&body)
+			AND (r.bid = true OR s.vendor_id = $2)
+	`, id, vendorID).Scan(&body)
 	return body, err
 }
 
@@ -265,30 +270,4 @@ func estimateRequestDBError(err error, fallback string) error {
 		}
 	}
 	return echo.NewHTTPError(http.StatusInternalServerError, fallback)
-}
-
-func pathID(c echo.Context) (int, error) {
-	return strconv.Atoi(c.Param("id"))
-}
-
-func optionalIntQueryParam(c echo.Context, name string) (*int, error) {
-	value := strings.TrimSpace(c.QueryParam(name))
-	if value == "" {
-		return nil, nil
-	}
-	parsed, err := strconv.Atoi(value)
-	if err != nil {
-		return nil, err
-	}
-	return &parsed, nil
-}
-
-func wrapJSON(key string, body []byte) []byte {
-	wrapped, err := json.Marshal(map[string]json.RawMessage{
-		key: body,
-	})
-	if err != nil {
-		return []byte(fmt.Sprintf(`{"%s":null}`, key))
-	}
-	return wrapped
 }
