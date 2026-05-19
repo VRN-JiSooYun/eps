@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { BellOutlined, DownOutlined, LogoutOutlined, PaperClipOutlined, QuestionCircleOutlined } from "@ant-design/icons";
+import { BellOutlined, CloseOutlined, DownOutlined, FilePdfOutlined, LogoutOutlined, PaperClipOutlined, QuestionCircleOutlined } from "@ant-design/icons";
 import { Button as AntButton, Card, Checkbox, Col, Descriptions, Form, Input, InputNumber, Row, Select, Space, Table, Upload } from "antd";
 import type { InputNumberProps } from "antd";
 import type { TableColumnsType } from "antd";
@@ -21,6 +21,15 @@ type SectionConfig = {
   title: string;
   type: "pending" | "completed" | "selecting";
 };
+
+type SupplierContactInfo = {
+  companyName: string;
+  contactName: string;
+  email: string;
+  mobilePhone: string;
+};
+
+type SupplierContactInfoKey = keyof SupplierContactInfo;
 
 const tabs = ["견적대기", "견적완료", "선정중", "납품요청", "배송중", "납품완료"];
 const secondaryTabs = ["미선정", "주문취소"];
@@ -48,6 +57,13 @@ function toNumericValue(value: unknown) {
   const numericValue = Number(`${value ?? ""}`.replace(/,/g, "").trim());
   return Number.isFinite(numericValue) ? numericValue : 0;
 };
+
+function formatFileSize(size: number) {
+  if (size >= 1024 * 1024) {
+    return `${(size / 1024 / 1024).toFixed(1)}MB`;
+  }
+  return `${Math.max(1, Math.round(size / 1024))}KB`;
+}
 
 export function MainPage({ estimateRequests, loading, message, onLogout, supplier }: MainPageProps) {
   const [selectedTab, setSelectedTab] = useState(tabs[0]);
@@ -366,12 +382,36 @@ function EstimateRequestSection({
 
 function EstimateRequestModalContent({ onClose, request, supplier }: { onClose: () => void; request: EstimateRequest; supplier: Supplier }) {
   const [form] = Form.useForm();
+  const [isSupplierEditing, setIsSupplierEditing] = useState(false);
+  const [quoteFile, setQuoteFile] = useState<File | null>(null);
+  const [quotePreviewUrl, setQuotePreviewUrl] = useState("");
+  const [supplierContactInfo, setSupplierContactInfo] = useState<SupplierContactInfo>({
+    companyName: supplier.companyName,
+    contactName: supplier.contactName || "",
+    email: supplier.email,
+    mobilePhone: supplier.mobilePhone || ""
+  });
   const watchedCount = Form.useWatch("count", form);
   const watchedUnitPrice = Form.useWatch("unitPrice", form);
   const unitLabel = formatUnitLabel(request);
   const supplierLabel = formatSupplier(request);
   const totalAmount = toNumericValue(watchedUnitPrice) * toNumericValue(watchedCount);
   const formattedTotalAmount = totalAmount > 0 ? totalAmount.toLocaleString() : "-";
+  const updateSupplierContactInfo = (name: keyof SupplierContactInfo, value: string) => {
+    setSupplierContactInfo((current) => ({ ...current, [name]: value }));
+  };
+
+  useEffect(() => {
+    if (!quoteFile || !quoteFile.type.startsWith("image/")) {
+      setQuotePreviewUrl("");
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(quoteFile);
+    setQuotePreviewUrl(objectUrl);
+
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [quoteFile]);
 
   return (
     <Form
@@ -479,10 +519,15 @@ function EstimateRequestModalContent({ onClose, request, supplier }: { onClose: 
               <Col xs={24} md={8}>
                 <Form.Item label="배송기한" required>
                   <div className="flex w-full items-center gap-2">
-                    <Select className="flex-1" options={[]} />
+                    <InputNumber className="flex-2" min={0} max={31}/>
                     <span className="text-gray-400">~</span>
-                    <Select className="flex-1" options={[]} />
-                    <Select className="w-20" value="주" options={[{ label: "주", value: "주" }]} />
+                    <InputNumber className="flex-2" min={0} max={31}/>
+                    <Select className="w-20" value="week" options={
+                      [
+                        { label: "일", value: "day" },
+                        { label: "주", value: "week" },
+                        { label: "개월", value: "month" },
+                      ]} />
                   </div>
                 </Form.Item>
               </Col>
@@ -512,23 +557,24 @@ function EstimateRequestModalContent({ onClose, request, supplier }: { onClose: 
               className="min-h-[230px] w-full bg-gray-100"
               bordered={false}
               extra={
-                <AntButton className="!bg-voronoi-orange !text-white" shape="round" type="primary">
-                  수정
+                <AntButton className="!bg-voronoi-orange !text-white" htmlType="button" shape="round" type="primary" onClick={() => setIsSupplierEditing((current) => !current)}>
+                  {isSupplierEditing ? "완료" : "수정"}
                 </AntButton>
               }
               title={<span className="text-2xl font-medium text-black">담당업체정보</span>}
             >
-              <Descriptions
-                className="eps-info-descriptions"
-                column={1}
-                colon={false}
-                items={[
-                  { label: "업체", children: supplier.companyName },
-                  { label: "담당자", children: supplier.contactName || "-" },
-                  { label: "휴대폰", children: supplier.mobilePhone || "-" },
-                  { label: "이메일", children: supplier.email }
-                ]}
-              />
+              <div className="space-y-4 text-base">
+                {supplierContactRows.map((row) => (
+                  <SupplierContactRow
+                    editing={isSupplierEditing}
+                    key={row.name}
+                    label={row.label}
+                    type={row.type}
+                    value={supplierContactInfo[row.name]}
+                    onChange={(value) => updateSupplierContactInfo(row.name, value)}
+                  />
+                ))}
+              </div>
             </Card>
           </Col>
 
@@ -541,15 +587,53 @@ function EstimateRequestModalContent({ onClose, request, supplier }: { onClose: 
               </Col>
               <Col className="flex" xs={24} md={12}>
                 <Form.Item className="eps-fill-form-item mb-0 w-full" name="quoteFile">
-                  <Upload.Dragger beforeUpload={() => false} className="eps-estimate-upload" maxCount={1}>
-                    <div className="flex h-full min-h-[230px] flex-col items-center justify-center text-gray-400">
-                      <PaperClipOutlined className="mb-2 text-4xl" />
-                      <p className="mb-1 text-lg">견적서</p>
-                      <p className="mb-4 text-lg">pdf, jpg, png 첨부 가능</p>
-                      <AntButton className="!bg-[#555] !px-6 !font-semibold !text-white" size="large">
-                        파일 가져오기
-                      </AntButton>
-                    </div>
+                  <Upload.Dragger
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    beforeUpload={(file) => {
+                      setQuoteFile(file);
+                      form.setFieldValue("quoteFile", file);
+                      return false;
+                    }}
+                    className="eps-estimate-upload"
+                    maxCount={1}
+                    showUploadList={false}
+                  >
+                    {quoteFile ? (
+                      <div className="relative flex h-full min-h-[230px] flex-col items-center justify-center gap-3 px-4 py-5 text-gray-400">
+                        <button
+                          className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-full bg-white text-gray-500 shadow-sm transition hover:text-voronoi-orange"
+                          type="button"
+                          aria-label="견적서 파일 삭제"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            setQuoteFile(null);
+                            form.setFieldValue("quoteFile", undefined);
+                          }}
+                        >
+                          <CloseOutlined />
+                        </button>
+                        {quotePreviewUrl ? (
+                          <img className="h-28 max-w-full rounded border border-gray-200 object-contain" src={quotePreviewUrl} alt="견적서 미리보기" />
+                        ) : (
+                          <div className="flex h-28 w-28 items-center justify-center rounded border border-gray-200 bg-gray-50 text-4xl text-voronoi-orange">
+                            <FilePdfOutlined />
+                          </div>
+                        )}
+                        <div className="max-w-full text-center">
+                          <p className="truncate text-sm font-medium text-gray-900">{quoteFile.name}</p>
+                          <p className="mt-1 text-xs text-gray-500">{formatFileSize(quoteFile.size)}</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex h-full min-h-[230px] flex-col items-center justify-center text-gray-400">
+                        <PaperClipOutlined className="mb-2 text-4xl" />
+                        <p className="mb-1 text-lg">견적서</p>
+                        <p className="mb-4 text-lg">pdf, jpg, png 첨부 가능</p>
+                        <AntButton className="!bg-[#555] !px-6 !font-semibold !text-white" size="large">
+                          파일 가져오기
+                        </AntButton>
+                      </div>
+                    )}
                   </Upload.Dragger>
                 </Form.Item>
               </Col>
@@ -567,6 +651,34 @@ function EstimateRequestModalContent({ onClose, request, supplier }: { onClose: 
         </div>
       </Space>
     </Form>
+  );
+}
+
+const supplierContactRows: Array<{ label: string; name: SupplierContactInfoKey; type?: string }> = [
+  { label: "업체", name: "companyName" },
+  { label: "담당자", name: "contactName" },
+  { label: "휴대폰", name: "mobilePhone" },
+  { label: "이메일", name: "email", type: "email" }
+];
+
+function SupplierContactRow({
+  editing,
+  label,
+  onChange,
+  type = "text",
+  value
+}: {
+  editing: boolean;
+  label: string;
+  onChange: (value: string) => void;
+  type?: string;
+  value: string;
+}) {
+  return (
+    <label className="grid grid-cols-[120px_1fr] items-center gap-3">
+      <span className="text-gray-500">{label}</span>
+      {editing ? <Input className="!bg-white" type={type} value={value} onChange={(event) => onChange(event.target.value)} /> : <span className="text-gray-900">{value || "-"}</span>}
+    </label>
   );
 }
 
