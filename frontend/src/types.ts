@@ -41,6 +41,55 @@ export type EstimateRequest = {
   discard: boolean;
 };
 
+export type EstimateResponse = {
+  id: number;
+  requestId: number;
+  vendorId: number;
+  vendorName: string;
+  vendorContactName: string;
+  vendorMobilePhone: string;
+  vendorEmail: string;
+  supplierId: number;
+  productName: string;
+  casNo: string;
+  catalogNo: string;
+  unitCost: number;
+  unitValue: number;
+  unitId: number | null;
+  unit: string | number | null;
+  count: number;
+  deliveryPeriod: string | null;
+  totalCost: number;
+  documentPath: string;
+  purity: string | null;
+  grade: string | null;
+  discard: boolean;
+  dateUpdated: string;
+  dateCreated: string;
+  note: string;
+};
+
+export type EstimateResponsePayload = {
+  requestId: number;
+  productName: string;
+  casNo?: string | null;
+  supplierId?: number | null;
+  catalogNo?: string | null;
+  unitCost: number;
+  unitValue?: number | null;
+  unit?: number | null;
+  count: number;
+  deliveryPeriod?: string | null;
+  totalCost: number;
+  quoteFile?: File | null;
+  purity?: string | null;
+  grade?: string | null;
+  note?: string | null;
+  vendorContactName?: string | null;
+  vendorMobilePhone?: string | null;
+  vendorEmail?: string | null;
+};
+
 export type RegisterPayload = {
   email: string;
   password: string;

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { BellOutlined, CloseOutlined, DownOutlined, FilePdfOutlined, LogoutOutlined, PaperClipOutlined, QuestionCircleOutlined } from "@ant-design/icons";
 import { Button as AntButton, Card, Checkbox, Col, Descriptions, Form, Input, InputNumber, Row, Select, Space, Table, Upload } from "antd";
 import type { GetProp, InputNumberProps, TableColumnsType, TableProps } from "antd";
+import { respondToEstimateRequest } from "../../api";
 import type { EstimateRequest, Supplier } from "../../types";
 import { Modal } from "../../layout/Modal/Modal";
 import { Modal as AntdModal } from "antd";
@@ -9,9 +10,11 @@ import { Modal as AntdModal } from "antd";
 type MainPageProps = {
   loading: boolean;
   message: string;
+  onEstimateRequestResponded: (requestId: number) => void;
   onLogout: () => void;
   estimateRequests: EstimateRequest[];
   supplier: Supplier;
+  token: string;
 };
 
 type SectionConfig = {
@@ -33,6 +36,23 @@ type SupplierContactInfoKey = keyof SupplierContactInfo;
 type TablePaginationConfig = Exclude<GetProp<TableProps, "pagination">, boolean>;
 type EstimateRequestTableParams = {
   pagination?: TablePaginationConfig;
+};
+type EstimateResponseFormValues = {
+  catalogNo?: string;
+  casNo?: string;
+  count?: number;
+  deliveryEnd?: number;
+  deliveryStart?: number;
+  deliveryUnit?: "day" | "week" | "month";
+  grade?: string;
+  note?: string;
+  productName?: string;
+  purity?: string;
+  quoteFile?: File;
+  supplier?: string;
+  unit?: string;
+  unitPrice?: number;
+  unitValue?: number;
 };
 
 const tabs = ["견적대기", "견적완료", "선정중", "납품요청", "배송중", "납품완료"];
@@ -63,6 +83,16 @@ function toNumericValue(value: unknown) {
   return Number.isFinite(numericValue) ? numericValue : 0;
 };
 
+function formatDeliveryPeriod(values: EstimateResponseFormValues) {
+  const start = values.deliveryStart ?? "";
+  const end = values.deliveryEnd ?? "";
+  const unitLabel = values.deliveryUnit === "day" ? "일" : values.deliveryUnit === "month" ? "개월" : "주";
+  if (start === "" && end === "") {
+    return "";
+  }
+  return `${start}~${end}${unitLabel}`;
+}
+
 function formatFileSize(size: number) {
   if (size >= 1024 * 1024) {
     return `${(size / 1024 / 1024).toFixed(1)}MB`;
@@ -70,7 +100,7 @@ function formatFileSize(size: number) {
   return `${Math.max(1, Math.round(size / 1024))}KB`;
 }
 
-export function MainPage({ estimateRequests, loading, message, onLogout, supplier }: MainPageProps) {
+export function MainPage({ estimateRequests, loading, message, onEstimateRequestResponded, onLogout, supplier, token }: MainPageProps) {
   const [selectedTab, setSelectedTab] = useState(tabs[0]);
   const [isDirectInput, setIsDirectInput] = useState(false);
 
@@ -249,7 +279,9 @@ export function MainPage({ estimateRequests, loading, message, onLogout, supplie
             sectionRef={(element) => {
               sectionRefs.current[section.title] = element;
             }}
+            onEstimateRequestResponded={onEstimateRequestResponded}
             supplier={supplier}
+            token={token}
           />
         ))}
       </div>
@@ -259,14 +291,18 @@ export function MainPage({ estimateRequests, loading, message, onLogout, supplie
 
 function EstimateRequestSection({
   loading,
+  onEstimateRequestResponded,
   section,
   sectionRef,
-  supplier
+  supplier,
+  token
 }: {
   loading: boolean;
+  onEstimateRequestResponded: (requestId: number) => void;
   section: SectionConfig;
   sectionRef: (element: HTMLElement | null) => void;
   supplier: Supplier;
+  token: string;
 }) {
   const [selectedEstimate, setselectedEstimate] = useState<EstimateRequest | null>(null);
   const [selectedRequest, setSelectedRequest] = useState<EstimateRequest | null>(null);
@@ -426,7 +462,16 @@ function EstimateRequestSection({
         width={1180}
         content={
           selectedEstimate ? (
-            <EstimateRequestModalContent request={selectedEstimate} supplier={supplier} onClose={() => setselectedEstimate(null)} />
+            <EstimateRequestModalContent
+              request={selectedEstimate}
+              supplier={supplier}
+              token={token}
+              onClose={() => setselectedEstimate(null)}
+              onSubmitted={(requestId) => {
+                setselectedEstimate(null);
+                onEstimateRequestResponded(requestId);
+              }}
+            />
           ) : null
         }
       />
@@ -484,11 +529,25 @@ function EstimateRequestSection({
   );
 }
 
-function EstimateRequestModalContent({ onClose, request, supplier }: { onClose: () => void; request: EstimateRequest; supplier: Supplier }) {
-  const [form] = Form.useForm();
+function EstimateRequestModalContent({
+  onClose,
+  onSubmitted,
+  request,
+  supplier,
+  token
+}: {
+  onClose: () => void;
+  onSubmitted: (requestId: number) => void;
+  request: EstimateRequest;
+  supplier: Supplier;
+  token: string;
+}) {
+  const [form] = Form.useForm<EstimateResponseFormValues>();
   const [isSupplierEditing, setIsSupplierEditing] = useState(false);
   const [quoteFile, setQuoteFile] = useState<File | null>(null);
   const [quotePreviewUrl, setQuotePreviewUrl] = useState("");
+  const [submitError, setSubmitError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const [supplierContactInfo, setSupplierContactInfo] = useState<SupplierContactInfo>({
     companyName: supplier.companyName,
     contactName: supplier.contactName || "",
@@ -525,13 +584,47 @@ function EstimateRequestModalContent({ onClose, request, supplier }: { onClose: 
         catalogNo: request.catalogNo,
         casNo: request.casNo,
         count: request.count,
+        deliveryUnit: "week",
         productName: request.productName,
         supplier: supplierLabel,
         unit: unitLabel || undefined,
         unitValue: request.unitValue
       }}
       layout="vertical"
-      onFinish={onClose}
+      onFinish={async (values) => {
+        setSubmitError("");
+        setSubmitting(true);
+        try {
+          const unitCost = toNumericValue(values.unitPrice);
+          const count = Math.max(1, Math.trunc(toNumericValue(values.count)));
+          const totalCost = unitCost * count;
+          await respondToEstimateRequest(token, {
+            requestId: request.id,
+            productName: values.productName || request.productName,
+            casNo: values.casNo || "",
+            supplierId: request.supplierId,
+            catalogNo: values.catalogNo || "",
+            unitCost,
+            unitValue: values.unitValue ?? request.unitValue,
+            unit: request.unitId,
+            count,
+            deliveryPeriod: formatDeliveryPeriod(values),
+            totalCost,
+            quoteFile,
+            purity: values.purity || "",
+            grade: values.grade || "",
+            note: values.note || "",
+            vendorContactName: supplierContactInfo.contactName,
+            vendorMobilePhone: supplierContactInfo.mobilePhone,
+            vendorEmail: supplierContactInfo.email
+          });
+          onSubmitted(request.id);
+        } catch (error) {
+          setSubmitError(error instanceof Error ? error.message : "견적 응답 저장에 실패했습니다.");
+        } finally {
+          setSubmitting(false);
+        }
+      }}
     >
       <Space className="w-full" orientation="vertical" size={20}>
         <Row gutter={[20, 20]}>
@@ -623,15 +716,20 @@ function EstimateRequestModalContent({ onClose, request, supplier }: { onClose: 
               <Col xs={24} md={8}>
                 <Form.Item label="배송기한" required>
                   <div className="flex w-full items-center gap-2">
-                    <InputNumber className="flex-2" min={0} max={31}/>
+                    <Form.Item className="mb-0 flex-1" name="deliveryStart" noStyle>
+                      <InputNumber className="w-full" min={0} max={31} />
+                    </Form.Item>
                     <span className="text-gray-400">~</span>
-                    <InputNumber className="flex-2" min={0} max={31}/>
-                    <Select className="w-20" value="week" options={
-                      [
+                    <Form.Item className="mb-0 flex-1" name="deliveryEnd" noStyle>
+                      <InputNumber className="w-full" min={0} max={31} />
+                    </Form.Item>
+                    <Form.Item className="mb-0 w-20" name="deliveryUnit" noStyle>
+                      <Select className="w-20" options={[
                         { label: "일", value: "day" },
                         { label: "주", value: "week" },
                         { label: "개월", value: "month" },
                       ]} />
+                    </Form.Item>
                   </div>
                 </Form.Item>
               </Col>
@@ -746,11 +844,13 @@ function EstimateRequestModalContent({ onClose, request, supplier }: { onClose: 
         </Row>
 
         <div className="flex justify-end gap-3 pt-1">
+          {submitError ? <p className="mr-auto self-center text-sm text-red-600">{submitError}</p> : null}
           <AntButton className="!h-10 !px-6" size="large" onClick={onClose}>
             닫기
           </AntButton>
-          <AntButton className="!h-10 !bg-voronoi-orange !px-6 !font-bold" htmlType="submit" size="large" type="primary">
-            접수하기
+          <AntButton className="!h-10 !bg-voronoi-orange !px-6 !font-bold" htmlType="submit" loading={submitting} size="large" type="primary"
+          >
+            {submitting ? "저장 중" : "접수하기"}
           </AntButton>
         </div>
       </Space>

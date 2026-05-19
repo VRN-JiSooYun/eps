@@ -55,7 +55,7 @@ func main() {
 	supplierHandler := handlers.NewSupplierHandler(pool, cfg.JWTSecret, cfg.UploadDir)
 	quoteHandler := handlers.NewQuoteHandler(pool)
 	estimateRequestHandler := handlers.NewEstimateRequestHandler(pool)
-	estimateResponseHandler := handlers.NewEstimateResponseHandler(pool)
+	estimateResponseHandler := handlers.NewEstimateResponseHandler(pool, cfg.UploadDir)
 	authMiddleware := appmiddleware.JWT(cfg.JWTSecret)
 
 	e.GET("/health", handlers.Health)
@@ -72,6 +72,7 @@ func main() {
 	api.GET("/estimate-requests/:id", estimateRequestHandler.Get, authMiddleware)
 	api.PUT("/estimate-requests/:id", estimateRequestHandler.Update, authMiddleware)
 	api.DELETE("/estimate-requests/:id", estimateRequestHandler.Delete, authMiddleware)
+
 	api.GET("/estimate-responses", estimateResponseHandler.List, authMiddleware)
 	api.POST("/estimate-responses", estimateResponseHandler.Create, authMiddleware)
 	api.GET("/estimate-responses/:id", estimateResponseHandler.Get, authMiddleware)

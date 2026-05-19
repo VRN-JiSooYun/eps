@@ -82,7 +82,17 @@ function AppRoutes() {
         path="/"
         element={
           isAuthed && supplier ? (
-            <MainPage supplier={supplier} estimateRequests={estimateRequests} loading={loading} message={message} onLogout={clearSession} />
+            <MainPage
+              supplier={supplier}
+              token={token}
+              estimateRequests={estimateRequests}
+              loading={loading}
+              message={message}
+              onEstimateRequestResponded={(requestId) => {
+                setEstimateRequests((current) => current.map((request) => (request.id === requestId ? { ...request, status: "completed" } : request)));
+              }}
+              onLogout={clearSession}
+            />
           ) : (
             <AuthPanel onRegisterClick={() => navigate("/register")} onAuth={saveSession} message={message} setMessage={setMessage} />
           )

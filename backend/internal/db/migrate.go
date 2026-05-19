@@ -118,7 +118,11 @@ CREATE TABLE IF NOT EXISTS eps_estimate_response (
 	request_id INTEGER NOT NULL REFERENCES eps_estimate_request(id) ON DELETE CASCADE ON UPDATE CASCADE,
 	vendor_id INTEGER NOT NULL REFERENCES eps_vendor_info(id) ON DELETE CASCADE ON UPDATE CASCADE,
 	vendor_name TEXT NOT NULL DEFAULT '',
+	vendor_contact_name TEXT NOT NULL DEFAULT '',
+	vendor_mobile_phone TEXT NOT NULL DEFAULT '',
+	vendor_email TEXT NOT NULL DEFAULT '',
 	product_name TEXT NOT NULL,
+	cas_no TEXT NOT NULL DEFAULT '',
 	supplier_id INTEGER REFERENCES supplier(id) ON DELETE SET NULL ON UPDATE CASCADE,
 	catalog_no TEXT NOT NULL DEFAULT '',
 	unit_cost DOUBLE PRECISION NOT NULL DEFAULT 0,
@@ -128,10 +132,21 @@ CREATE TABLE IF NOT EXISTS eps_estimate_response (
 	delivery_period TEXT NOT NULL DEFAULT '',
 	total_cost DOUBLE PRECISION NOT NULL DEFAULT 0,
 	document_path TEXT NOT NULL DEFAULT '',
+	purity TEXT NOT NULL DEFAULT '',
+	grade TEXT NOT NULL DEFAULT '',
+	note TEXT NOT NULL DEFAULT '',
 	discard BOOLEAN NOT NULL DEFAULT false,
 	date_updated TIMESTAMPTZ NOT NULL DEFAULT now(),
 	date_created TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+ALTER TABLE eps_estimate_response ADD COLUMN IF NOT EXISTS vendor_contact_name TEXT NOT NULL DEFAULT '';
+ALTER TABLE eps_estimate_response ADD COLUMN IF NOT EXISTS vendor_mobile_phone TEXT NOT NULL DEFAULT '';
+ALTER TABLE eps_estimate_response ADD COLUMN IF NOT EXISTS vendor_email TEXT NOT NULL DEFAULT '';
+ALTER TABLE eps_estimate_response ADD COLUMN IF NOT EXISTS cas_no TEXT NOT NULL DEFAULT '';
+ALTER TABLE eps_estimate_response ADD COLUMN IF NOT EXISTS purity TEXT NOT NULL DEFAULT '';
+ALTER TABLE eps_estimate_response ADD COLUMN IF NOT EXISTS grade TEXT NOT NULL DEFAULT '';
+ALTER TABLE eps_estimate_response ADD COLUMN IF NOT EXISTS note TEXT NOT NULL DEFAULT '';
 
 CREATE INDEX IF NOT EXISTS eps_estimate_response_request_id_idx ON eps_estimate_response(request_id);
 CREATE INDEX IF NOT EXISTS eps_estimate_response_vendor_id_idx ON eps_estimate_response(vendor_id);
@@ -148,7 +163,11 @@ AS $$
 		'requestId', r.request_id,
 		'vendorId', r.vendor_id,
 		'vendorName', r.vendor_name,
+		'vendorContactName', r.vendor_contact_name,
+		'vendorMobilePhone', r.vendor_mobile_phone,
+		'vendorEmail', r.vendor_email,
 		'productName', r.product_name,
+		'casNo', r.cas_no,
 		'supplierId', r.supplier_id,
 		'catalogNo', r.catalog_no,
 		'unitCost', r.unit_cost,
@@ -159,6 +178,9 @@ AS $$
 		'deliveryPeriod', r.delivery_period,
 		'totalCost', r.total_cost,
 		'documentPath', r.document_path,
+		'purity', r.purity,
+		'grade', r.grade,
+		'note', r.note,
 		'discard', r.discard,
 		'dateUpdated', r.date_updated,
 		'dateCreated', r.date_created

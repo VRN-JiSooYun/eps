@@ -1,4 +1,4 @@
-import type { AuthResponse, EstimateRequest, LoginPayload, RegisterPayload, SupplierRegisterPayload, SupplierRegisterResponse } from "./types";
+import type { AuthResponse, EstimateRequest, EstimateResponse, EstimateResponsePayload, LoginPayload, RegisterPayload, SupplierRegisterPayload, SupplierRegisterResponse } from "./types";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api";
 
@@ -19,10 +19,11 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   return response.json() as Promise<T>;
 }
 
-async function multipartRequest<T>(path: string, body: FormData): Promise<T> {
+async function multipartRequest<T>(path: string, body: FormData, headers: HeadersInit = {}): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     method: "POST",
-    body
+    body,
+    headers
   });
 
   if (!response.ok) {
@@ -53,6 +54,42 @@ export function listEstimateRequests(token: string) {
       Authorization: `Bearer ${token}`
     }
   });
+}
+
+export function respondToEstimateRequest(token: string, payload: EstimateResponsePayload) {
+  const formData = new FormData();
+  appendFormValue(formData, "requestId", payload.requestId);
+  appendFormValue(formData, "productName", payload.productName);
+  appendFormValue(formData, "casNo", payload.casNo);
+  appendFormValue(formData, "supplierId", payload.supplierId);
+  appendFormValue(formData, "catalogNo", payload.catalogNo);
+  appendFormValue(formData, "unitCost", payload.unitCost);
+  appendFormValue(formData, "unitValue", payload.unitValue);
+  appendFormValue(formData, "unit", payload.unit);
+  appendFormValue(formData, "count", payload.count);
+  appendFormValue(formData, "deliveryPeriod", payload.deliveryPeriod);
+  appendFormValue(formData, "totalCost", payload.totalCost);
+  appendFormValue(formData, "purity", payload.purity);
+  appendFormValue(formData, "grade", payload.grade);
+  appendFormValue(formData, "note", payload.note);
+  appendFormValue(formData, "vendorContactName", payload.vendorContactName);
+  appendFormValue(formData, "vendorMobilePhone", payload.vendorMobilePhone);
+  appendFormValue(formData, "vendorEmail", payload.vendorEmail);
+
+  if (payload.quoteFile) {
+    formData.append("quoteFile", payload.quoteFile);
+  }
+
+  return multipartRequest<{ estimateResponse: EstimateResponse }>("/estimate-responses", formData, {
+    Authorization: `Bearer ${token}`
+  });
+}
+
+function appendFormValue(formData: FormData, key: string, value: string | number | boolean | null | undefined) {
+  if (value === undefined || value === null || value === "") {
+    return;
+  }
+  formData.append(key, String(value));
 }
 
 export function supplierRegister(payload: SupplierRegisterPayload) {
