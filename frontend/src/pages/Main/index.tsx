@@ -29,7 +29,11 @@ import type {
   TableColumnsType,
   TableProps,
 } from "antd";
-import { listSuppliers, respondToEstimateRequest } from "../../api";
+import {
+  listEstimateResponses,
+  listSuppliers,
+  respondToEstimateRequest,
+} from "../../api";
 import type {
   EstimateRequest,
   Supplier,
@@ -403,6 +407,9 @@ function EstimateRequestSection({
   const [selectedDetail, setSelectedDetail] = useState<EstimateRequest | null>(
     null,
   );
+  const [responseCountByRequestId, setResponseCountByRequestId] = useState<
+    Record<number, number>
+  >({});
 
   const [isDirectInput, setIsDirectInput] = useState(false);
   const [tableParams, setTableParams] = useState<EstimateRequestTableParams>({
@@ -430,6 +437,35 @@ function EstimateRequestSection({
       },
     }));
   }, [section.rows.length]);
+
+  useEffect(() => {
+    let ignore = false;
+    if (section.type !== "completed") {
+      return;
+    }
+
+    async function loadResponseCounts() {
+      const entries = await Promise.all(
+        section.rows.map(async (row) => {
+          try {
+            const result = await listEstimateResponses(token, row.id);
+            return [row.id, result.estimateResponses.length] as const;
+          } catch {
+            return [row.id, 0] as const;
+          }
+        }),
+      );
+
+      if (!ignore) {
+        setResponseCountByRequestId(Object.fromEntries(entries));
+      }
+    }
+
+    loadResponseCounts();
+    return () => {
+      ignore = true;
+    };
+  }, [section.rows, section.type, token]);
 
   const handleTableChange: TableProps<EstimateRequest>["onChange"] = (
     pagination,
@@ -542,8 +578,18 @@ function EstimateRequestSection({
             요청
           </AntButton>
         ) : (
-          <span className="text-gray-500">-</span>
+          <span className="text-gray-700">
+            {section.type === "completed"
+              ? (responseCountByRequestId[estimateRequest.id] ?? 0)
+              : "-"}
+          </span>
         ),
+      sorter:
+        section.type === "completed"
+          ? (a, b) =>
+              (responseCountByRequestId[a.id] ?? 0) -
+              (responseCountByRequestId[b.id] ?? 0)
+          : undefined,
       title: <SectionActionLabel type={section.type} />,
       width: 112,
     },
@@ -617,7 +663,9 @@ function EstimateRequestSection({
         }
         onClose={() => setSelectedDetail(null)}
         requestNumber={
-          selectedDetail ? String(formatEstimateRequestNumber(selectedDetail)) : ""
+          selectedDetail
+            ? String(formatEstimateRequestNumber(selectedDetail))
+            : ""
         }
         title="접수완료"
         visible={Boolean(selectedDetail)}

@@ -120,7 +120,7 @@ export function EstimateRequestVendorInfo({
 
   return (
     <Card
-      className="min-h-[230px] w-full bg-gray-100"
+      className="min-h-[260px] w-full bg-gray-100"
       bordered={false}
       extra={
         <AntButton

@@ -20,6 +20,7 @@ export const Modal: React.FC<ModalProps> = ({ visible, title, content, onClose, 
       footer={null}
       centered
       width={width}
+      destroyOnClose
     >
       {content}
     </AntdModal>

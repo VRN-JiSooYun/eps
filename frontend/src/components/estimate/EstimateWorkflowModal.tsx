@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { Modal } from "../../layout/Modal/Modal";
 
-const ESTIMATE_WORKFLOW_MODAL_WIDTH = 1180;
+const ESTIMATE_WORKFLOW_MODAL_WIDTH = 1280;
 const ESTIMATE_WORKFLOW_MODAL_MIN_HEIGHT_CLASS = "min-h-[760px]";
 
 export function EstimateWorkflowModal({
