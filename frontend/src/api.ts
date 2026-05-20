@@ -1,4 +1,4 @@
-import type { AuthResponse, EstimateRequest, EstimateResponse, EstimateResponsePayload, LoginPayload, RegisterPayload, SupplierRegisterPayload, SupplierRegisterResponse } from "./types";
+import type { AuthResponse, EstimateRequest, EstimateResponse, EstimateResponsePayload, EstimateResponseUpdatePayload, LoginPayload, RegisterPayload, SupplierOption, SupplierRegisterPayload, SupplierRegisterResponse } from "./types";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api";
 
@@ -19,9 +19,14 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   return response.json() as Promise<T>;
 }
 
-async function multipartRequest<T>(path: string, body: FormData, headers: HeadersInit = {}): Promise<T> {
+async function multipartRequest<T>(
+  path: string,
+  body: FormData,
+  headers: HeadersInit = {},
+  method: "POST" | "PUT" = "POST"
+): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
-    method: "POST",
+    method,
     body,
     headers
   });
@@ -56,6 +61,22 @@ export function listEstimateRequests(token: string) {
   });
 }
 
+export function listSuppliers(token: string) {
+  return request<{ suppliers: SupplierOption[] }>("/suppliers", {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+}
+
+export function listEstimateResponses(token: string, requestId: number) {
+  return request<{ estimateResponses: EstimateResponse[] }>(`/estimate-responses?requestId=${requestId}`, {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+}
+
 export function respondToEstimateRequest(token: string, payload: EstimateResponsePayload) {
   const formData = new FormData();
   appendFormValue(formData, "requestId", payload.requestId);
@@ -82,6 +103,48 @@ export function respondToEstimateRequest(token: string, payload: EstimateRespons
 
   return multipartRequest<{ estimateResponse: EstimateResponse }>("/estimate-responses", formData, {
     Authorization: `Bearer ${token}`
+  });
+}
+
+export function updateEstimateResponse(token: string, id: number, payload: EstimateResponseUpdatePayload) {
+  if (payload.quoteFile) {
+    const formData = new FormData();
+    appendFormValue(formData, "productName", payload.productName);
+    appendFormValue(formData, "casNo", payload.casNo);
+    appendFormValue(formData, "supplierId", payload.supplierId);
+    appendFormValue(formData, "catalogNo", payload.catalogNo);
+    appendFormValue(formData, "unitCost", payload.unitCost);
+    appendFormValue(formData, "unitValue", payload.unitValue);
+    appendFormValue(formData, "unit", payload.unit);
+    appendFormValue(formData, "count", payload.count);
+    appendFormValue(formData, "deliveryPeriod", payload.deliveryPeriod);
+    appendFormValue(formData, "totalCost", payload.totalCost);
+    appendFormValue(formData, "purity", payload.purity);
+    appendFormValue(formData, "grade", payload.grade);
+    appendFormValue(formData, "note", payload.note);
+    appendFormValue(formData, "vendorContactName", payload.vendorContactName);
+    appendFormValue(formData, "vendorMobilePhone", payload.vendorMobilePhone);
+    appendFormValue(formData, "vendorEmail", payload.vendorEmail);
+    appendFormValue(formData, "discard", payload.discard);
+    appendFormValue(formData, "documentPath", payload.documentPath);
+    formData.append("quoteFile", payload.quoteFile);
+
+    return multipartRequest<{ estimateResponse: EstimateResponse }>(
+      `/estimate-responses/${id}`,
+      formData,
+      {
+        Authorization: `Bearer ${token}`
+      },
+      "PUT"
+    );
+  }
+
+  return request<{ estimateResponse: EstimateResponse }>(`/estimate-responses/${id}`, {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify(payload)
   });
 }
 

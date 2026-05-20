@@ -1,10 +1,17 @@
 import { FormEvent, useEffect, useState } from "react";
 import { Button, Checkbox, ConfigProvider, Input } from "antd";
-import { BrowserRouter, Navigate, Route, Routes, useNavigate } from "react-router-dom";
+import {
+  BrowserRouter,
+  Navigate,
+  Route,
+  Routes,
+  useNavigate,
+} from "react-router-dom";
 import { listEstimateRequests, login } from "./api";
 import { MainPage } from "./pages/Main";
 import Register from "./pages/Register";
 import type { AuthResponse, EstimateRequest, Supplier } from "./types";
+import TestPage from "./pages/Test";
 
 const tokenKey = "eps.auth.token";
 const supplierKey = "eps.auth.supplier";
@@ -16,14 +23,15 @@ export function App() {
       theme={{
         components: {
           Table: {
-            headerSplitColor: "transparent"
-          }
+            headerSplitColor: "transparent",
+          },
         },
         token: {
           borderRadius: 6,
           colorPrimary: "#E85324",
-          fontFamily: 'Pretendard, "Noto Sans KR", Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
-        }
+          fontFamily:
+            'Pretendard, "Noto Sans KR", Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+        },
       }}
     >
       <BrowserRouter>
@@ -34,12 +42,16 @@ export function App() {
 }
 
 function AppRoutes() {
-  const [token, setToken] = useState(() => localStorage.getItem(tokenKey) ?? "");
+  const [token, setToken] = useState(
+    () => localStorage.getItem(tokenKey) ?? "",
+  );
   const [supplier, setSupplier] = useState<Supplier | null>(() => {
     const raw = localStorage.getItem(supplierKey);
     return raw ? (JSON.parse(raw) as Supplier) : null;
   });
-  const [estimateRequests, setEstimateRequests] = useState<EstimateRequest[]>([]);
+  const [estimateRequests, setEstimateRequests] = useState<EstimateRequest[]>(
+    [],
+  );
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const navigate = useNavigate();
@@ -89,16 +101,31 @@ function AppRoutes() {
               loading={loading}
               message={message}
               onEstimateRequestResponded={(requestId) => {
-                setEstimateRequests((current) => current.map((request) => (request.id === requestId ? { ...request, status: "completed" } : request)));
+                setEstimateRequests((current) =>
+                  current.map((request) =>
+                    request.id === requestId
+                      ? { ...request, status: "completed" }
+                      : request,
+                  ),
+                );
               }}
               onLogout={clearSession}
             />
           ) : (
-            <AuthPanel onRegisterClick={() => navigate("/register")} onAuth={saveSession} message={message} setMessage={setMessage} />
+            <AuthPanel
+              onRegisterClick={() => navigate("/register")}
+              onAuth={saveSession}
+              message={message}
+              setMessage={setMessage}
+            />
           )
         }
       />
-      <Route path="/register" element={isAuthed ? <Navigate to="/" replace /> : <Register />} />
+      <Route
+        path="/register"
+        element={isAuthed ? <Navigate to="/" replace /> : <Register />}
+      />
+      <Route path="/test" element={<TestPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
@@ -108,16 +135,20 @@ function AuthPanel({
   onRegisterClick,
   onAuth,
   message,
-  setMessage
+  setMessage,
 }: {
   onRegisterClick: () => void;
   onAuth: (auth: AuthResponse) => void;
   message: string;
   setMessage: (message: string) => void;
 }) {
-  const [email, setEmail] = useState(() => localStorage.getItem(rememberedEmailKey) ?? "");
+  const [email, setEmail] = useState(
+    () => localStorage.getItem(rememberedEmailKey) ?? "",
+  );
   const [password, setPassword] = useState("");
-  const [rememberEmail, setRememberEmail] = useState(() => Boolean(localStorage.getItem(rememberedEmailKey)));
+  const [rememberEmail, setRememberEmail] = useState(() =>
+    Boolean(localStorage.getItem(rememberedEmailKey)),
+  );
   const [submitting, setSubmitting] = useState(false);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -135,7 +166,9 @@ function AuthPanel({
       const auth = await login({ email, password });
       onAuth(auth);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "요청 처리에 실패했습니다.");
+      setMessage(
+        error instanceof Error ? error.message : "요청 처리에 실패했습니다.",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -149,8 +182,12 @@ function AuthPanel({
             <div className="mb-8">
               <img className="h-14" src="/logos/1_vrn_ci.png"></img>
             </div>
-            <h1 className="mb-2 text-4xl font-normal tracking-normal text-black">Login</h1>
-            <p className="text-lg font-bold tracking-normal text-black">보로노이 파트너 플랫폼</p>
+            <h1 className="mb-2 text-4xl font-normal tracking-normal text-black">
+              Login
+            </h1>
+            <p className="text-lg font-bold tracking-normal text-black">
+              보로노이 파트너 플랫폼
+            </p>
           </header>
 
           <form className="space-y-4" onSubmit={submit}>
@@ -175,7 +212,10 @@ function AuthPanel({
             />
 
             <div className="flex items-center justify-between py-2">
-              <Checkbox checked={rememberEmail} onChange={(event) => setRememberEmail(event.target.checked)}>
+              <Checkbox
+                checked={rememberEmail}
+                onChange={(event) => setRememberEmail(event.target.checked)}
+              >
                 아이디 저장
               </Checkbox>
 
@@ -183,16 +223,28 @@ function AuthPanel({
                 className="!text-voronoi-gray-800 transition hover:!text-voronoi-orange"
                 type="text"
                 size="small"
-                onClick={() => setMessage("관리자에게 문의하여 비밀번호를 초기화하세요.")}
+                onClick={() =>
+                  setMessage("관리자에게 문의하여 비밀번호를 초기화하세요.")
+                }
               >
                 비밀번호 초기화
               </Button>
             </div>
 
-            {message ? <p className="rounded-md bg-voronoi-orange/10 px-3 py-2 text-sm text-voronoi-orange">{message}</p> : null}
+            {message ? (
+              <p className="rounded-md bg-voronoi-orange/10 px-3 py-2 text-sm text-voronoi-orange">
+                {message}
+              </p>
+            ) : null}
 
             <div className="pt-2">
-              <Button className="login-submit" type="primary" htmlType="submit" loading={submitting} disabled={submitting}>
+              <Button
+                className="login-submit"
+                type="primary"
+                htmlType="submit"
+                loading={submitting}
+                disabled={submitting}
+              >
                 {submitting ? "처리 중" : "로그인"}
               </Button>
             </div>
@@ -212,7 +264,10 @@ function AuthPanel({
 
       <section className="login-visual relative hidden overflow-hidden bg-voronoi-gray-900 lg:block lg:w-[60%]">
         <div className="absolute right-8 top-12 z-10 flex items-center gap-3 xl:right-12">
-          <img className="h-12 brightness-0 invert" src="/logos/1_vrn_logo_orange.png" />
+          <img
+            className="h-12 brightness-0 invert"
+            src="/logos/1_vrn_logo_orange.png"
+          />
         </div>
       </section>
     </main>

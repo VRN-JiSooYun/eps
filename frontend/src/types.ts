@@ -22,6 +22,11 @@ export type AuthResponse = {
   supplier: Supplier;
 };
 
+export type SupplierOption = {
+  id: number;
+  supplierName: string;
+};
+
 export type EstimateRequest = {
   id: number;
   bid: boolean;
@@ -30,6 +35,7 @@ export type EstimateRequest = {
   productName: string;
   casNo: string;
   supplierId: number | null;
+  supplierName: string | null;
   catalogNo: string;
   unitValue: number;
   unitId: number | null;
@@ -49,7 +55,8 @@ export type EstimateResponse = {
   vendorContactName: string;
   vendorMobilePhone: string;
   vendorEmail: string;
-  supplierId: number;
+  supplierId: number | null;
+  supplierName: string | null;
   productName: string;
   casNo: string;
   catalogNo: string;
@@ -88,6 +95,31 @@ export type EstimateResponsePayload = {
   vendorContactName?: string | null;
   vendorMobilePhone?: string | null;
   vendorEmail?: string | null;
+};
+
+export type EstimateResponseUpdatePayload = Partial<
+  Omit<EstimateResponsePayload, "requestId">
+> & {
+  discard?: boolean;
+  documentPath?: string | null;
+};
+
+export type EstimateResponseFormValues = {
+  catalogNo?: string;
+  casNo?: string;
+  count?: number;
+  deliveryEnd?: number;
+  deliveryStart?: number;
+  deliveryUnit?: "day" | "week" | "month";
+  grade?: string;
+  note?: string;
+  productName?: string;
+  purity?: string;
+  quoteFile?: File;
+  supplierId?: number | null;
+  unit?: string;
+  unitPrice?: number;
+  unitValue?: number;
 };
 
 export type RegisterPayload = {

@@ -125,6 +125,19 @@
     @apply !min-h-[264px] resize-y;
   }
 
+  .eps-accepted-card-scroll::-webkit-scrollbar {
+    height: 8px;
+  }
+
+  .eps-accepted-card-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .eps-accepted-card-scroll::-webkit-scrollbar-thumb {
+    background-color: #8b8b8b;
+    border-radius: 9999px;
+  }
+
   .eps-info-descriptions .ant-descriptions-item-label {
     @apply !w-[120px] !text-gray-500;
   }

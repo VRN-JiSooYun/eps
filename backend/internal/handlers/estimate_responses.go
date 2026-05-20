@@ -26,6 +26,7 @@ type EstimateResponseHandler struct {
 	uploadDir string
 }
 
+// Maximum allowed file size for estimate response documents (10MB)
 const maxEstimateResponseDocumentSize = 10 << 20
 
 func NewEstimateResponseHandler(db *pgxpool.Pool, uploadDir string) EstimateResponseHandler {
@@ -243,13 +244,11 @@ func (h EstimateResponseHandler) Update(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "id must be an integer")
 	}
 
-	var req models.EstimateResponsePayload
-	if err := c.Bind(&req); err != nil {
+	req, quoteFile, err := h.bindUpdatePayload(c)
+	if err != nil {
 		logHandlerError(c, "estimate_responses.update.bind", err)
-		return echo.NewHTTPError(http.StatusBadRequest, "invalid request body")
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
-
-	normalizeEstimateResponsePayload(&req)
 	if err := validateEstimateResponsePayload(req, false); err != nil {
 		logHandlerError(c, "estimate_responses.update.validate", err)
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
@@ -263,6 +262,29 @@ func (h EstimateResponseHandler) Update(c echo.Context) error {
 
 	ctx, cancel := context.WithTimeout(c.Request().Context(), 5*time.Second)
 	defer cancel()
+
+	if quoteFile != nil {
+		var requestID int
+		if err := h.db.QueryRow(ctx, `
+			SELECT request_id
+			FROM eps_estimate_response
+			WHERE id = $1
+				AND vendor_id = $2
+		`, id, vendorID).Scan(&requestID); err != nil {
+			logHandlerError(c, "estimate_responses.update.fetch_request_id", err)
+			if err == pgx.ErrNoRows {
+				return echo.NewHTTPError(http.StatusNotFound, "estimate response not found")
+			}
+			return echo.NewHTTPError(http.StatusInternalServerError, "failed to update estimate response")
+		}
+
+		documentPath, err := h.saveEstimateDocument(vendorID, requestID, quoteFile)
+		if err != nil {
+			logHandlerError(c, "estimate_responses.update.save_document", err)
+			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		}
+		req.DocumentPath = &documentPath
+	}
 
 	var body []byte
 	err = h.db.QueryRow(ctx, `
@@ -385,6 +407,50 @@ func (h EstimateResponseHandler) bindCreatePayload(c echo.Context) (models.Estim
 
 	req := models.EstimateResponsePayload{
 		RequestID:         optionalIntFormValue(c, "requestId"),
+		ProductName:       strings.TrimSpace(c.FormValue("productName")),
+		CasNo:             optionalStringFormValue(c, "casNo"),
+		SupplierID:        optionalIntFormValue(c, "supplierId"),
+		CatalogNo:         optionalStringFormValue(c, "catalogNo"),
+		UnitCost:          optionalFloatFormValue(c, "unitCost"),
+		UnitValue:         optionalFloatFormValue(c, "unitValue"),
+		Unit:              optionalIntFormValue(c, "unit"),
+		Count:             optionalIntFormValue(c, "count"),
+		DeliveryPeriod:    optionalStringFormValue(c, "deliveryPeriod"),
+		TotalCost:         optionalFloatFormValue(c, "totalCost"),
+		DocumentPath:      optionalStringFormValue(c, "documentPath"),
+		Purity:            optionalStringFormValue(c, "purity"),
+		Grade:             optionalStringFormValue(c, "grade"),
+		Note:              optionalStringFormValue(c, "note"),
+		VendorContactName: optionalStringFormValue(c, "vendorContactName"),
+		VendorMobilePhone: optionalStringFormValue(c, "vendorMobilePhone"),
+		VendorEmail:       optionalStringFormValue(c, "vendorEmail"),
+		Discard:           optionalBoolFormValue(c, "discard"),
+	}
+	normalizeEstimateResponsePayload(&req)
+
+	file, err := optionalEstimateResponseFile(c, "quoteFile")
+	if err != nil {
+		return req, nil, err
+	}
+	return req, file, nil
+}
+
+func (h EstimateResponseHandler) bindUpdatePayload(c echo.Context) (models.EstimateResponsePayload, *multipart.FileHeader, error) {
+	contentType := c.Request().Header.Get(echo.HeaderContentType)
+	if !strings.HasPrefix(contentType, "multipart/form-data") {
+		var req models.EstimateResponsePayload
+		if err := c.Bind(&req); err != nil {
+			return req, nil, errors.New("invalid request body")
+		}
+		normalizeEstimateResponsePayload(&req)
+		return req, nil, nil
+	}
+
+	if err := c.Request().ParseMultipartForm(32 << 20); err != nil {
+		return models.EstimateResponsePayload{}, nil, errors.New("invalid multipart form")
+	}
+
+	req := models.EstimateResponsePayload{
 		ProductName:       strings.TrimSpace(c.FormValue("productName")),
 		CasNo:             optionalStringFormValue(c, "casNo"),
 		SupplierID:        optionalIntFormValue(c, "supplierId"),

@@ -66,6 +66,7 @@ func main() {
 	api.POST("/auth/register", authHandler.Register)
 	api.POST("/auth/login", authHandler.Login)
 	api.POST("/suppliers/register", supplierHandler.Register)
+	api.GET("/suppliers", supplierHandler.List, authMiddleware)
 	api.GET("/quote-requests/pending", quoteHandler.ListPending, authMiddleware)
 	api.GET("/estimate-requests", estimateRequestHandler.List, authMiddleware)
 	api.POST("/estimate-requests", estimateRequestHandler.Create, authMiddleware)

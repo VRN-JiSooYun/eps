@@ -52,6 +52,30 @@ func NewSupplierHandler(db *pgxpool.Pool, jwtSecret string, uploadDir string) Su
 	return SupplierHandler{db: db, jwtSecret: jwtSecret, uploadDir: uploadDir}
 }
 
+func (h SupplierHandler) List(c echo.Context) error {
+	ctx, cancel := context.WithTimeout(c.Request().Context(), 5*time.Second)
+	defer cancel()
+
+	var suppliers []byte
+	if err := h.db.QueryRow(ctx, `
+		SELECT COALESCE(
+			json_agg(
+				json_build_object(
+					'id', s.id,
+					'supplierName', s.supplier_name
+				)
+				ORDER BY s.supplier_name
+			),
+			'[]'::json
+		)
+		FROM supplier s
+	`).Scan(&suppliers); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to list suppliers")
+	}
+
+	return c.JSONBlob(http.StatusOK, wrapJSON("suppliers", suppliers))
+}
+
 func (h SupplierHandler) Register(c echo.Context) error {
 	if err := c.Request().ParseMultipartForm(32 << 20); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid multipart form")
