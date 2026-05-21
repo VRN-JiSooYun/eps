@@ -36,6 +36,7 @@ import {
 } from "../../api";
 import type {
   EstimateRequest,
+  EstimateRequestSubStatus,
   Supplier,
   EstimateResponseFormValues,
   SupplierOption,
@@ -62,6 +63,7 @@ import {
   EstimateRequestVendorInfo,
 } from "../../components/estimate/EstimateRequestDescription";
 import { EstimateAcceptedModalContent } from "../../components/estimate/EstimateAcceptedModal";
+import { EstimateSelectingModalContent } from "../../components/estimate/EstimateSelectingModal";
 import { EstimateWorkflowModal } from "../../components/estimate/EstimateWorkflowModal";
 
 type MainPageProps = {
@@ -86,6 +88,7 @@ type SectionConfig = {
     | "delivery_requested"
     | "shipping"
     | "delivered";
+  subStatus?: EstimateRequestSubStatus;
 };
 
 type TablePaginationConfig = Exclude<
@@ -407,6 +410,8 @@ function EstimateRequestSection({
   const [selectedDetail, setSelectedDetail] = useState<EstimateRequest | null>(
     null,
   );
+  const [selectedSelectingDetail, setSelectedSelectingDetail] =
+    useState<EstimateRequest | null>(null);
   const [responseCountByRequestId, setResponseCountByRequestId] = useState<
     Record<number, number>
   >({});
@@ -493,6 +498,8 @@ function EstimateRequestSection({
               setselectedEstimate(estimateRequest);
             } else if (section.type === "completed") {
               setSelectedDetail(estimateRequest);
+            } else if (section.type === "selecting") {
+              setSelectedSelectingDetail(estimateRequest);
             }
           }}
         >
@@ -669,6 +676,27 @@ function EstimateRequestSection({
         }
         title="접수완료"
         visible={Boolean(selectedDetail)}
+      />
+      <EstimateWorkflowModal
+        content={
+          selectedSelectingDetail ? (
+            <EstimateSelectingModalContent
+              onClose={() => setSelectedSelectingDetail(null)}
+              request={selectedSelectingDetail}
+              supplier={supplier}
+              supplierOptions={supplierOptions}
+              token={token}
+            />
+          ) : null
+        }
+        onClose={() => setSelectedSelectingDetail(null)}
+        requestNumber={
+          selectedSelectingDetail
+            ? String(formatEstimateRequestNumber(selectedSelectingDetail))
+            : ""
+        }
+        title="선정중"
+        visible={Boolean(selectedSelectingDetail)}
       />
       <AntdModal
         open={Boolean(selectedRequest)}

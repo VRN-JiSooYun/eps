@@ -77,6 +77,8 @@ type DraftValidationErrors = Partial<
 >;
 
 export function EstimateAcceptedModalContent({
+  allowAddResponse = true,
+  allowEditResponse = true,
   onClose,
   onSubmitted,
   request,
@@ -84,6 +86,8 @@ export function EstimateAcceptedModalContent({
   supplierOptions,
   token,
 }: {
+  allowAddResponse?: boolean;
+  allowEditResponse?: boolean;
   onClose: () => void;
   onSubmitted: (requestId: number) => void;
   request: EstimateRequest;
@@ -225,6 +229,9 @@ export function EstimateAcceptedModalContent({
   }
 
   function addEstimateCard() {
+    if (!allowAddResponse) {
+      return;
+    }
     if (pendingNewResponse) {
       return;
     }
@@ -356,6 +363,7 @@ export function EstimateAcceptedModalContent({
                     {estimateResponses.map((response, index) => (
                       <EstimateResponseCard
                         draft={drafts[response.id] ?? toDraft(response)}
+                        editable={allowEditResponse}
                         editing={editingResponseId === response.id}
                         key={response.id}
                         requestUnitId={request.unitId}
@@ -385,6 +393,7 @@ export function EstimateAcceptedModalContent({
                           drafts[pendingNewResponse.id] ??
                           createEmptyDraft(request)
                         }
+                        editable={allowEditResponse}
                         editing={true}
                         key={pendingNewResponse.id}
                         requestUnitId={request.unitId}
@@ -412,9 +421,9 @@ export function EstimateAcceptedModalContent({
                         onEdit={() => undefined}
                         onSave={() => saveNewResponse(pendingNewResponse.id)}
                       />
-                    ) : (
+                    ) : allowAddResponse ? (
                       <EstimateAddCard onAdd={addEstimateCard} />
-                    )}
+                    ) : null}
                   </>
                 ) : (
                   <>
@@ -427,6 +436,7 @@ export function EstimateAcceptedModalContent({
                           drafts[pendingNewResponse.id] ??
                           createEmptyDraft(request)
                         }
+                        editable={allowEditResponse}
                         editing={true}
                         key={pendingNewResponse.id}
                         requestUnitId={request.unitId}
@@ -454,9 +464,9 @@ export function EstimateAcceptedModalContent({
                         onEdit={() => undefined}
                         onSave={() => saveNewResponse(pendingNewResponse.id)}
                       />
-                    ) : (
+                    ) : allowAddResponse ? (
                       <EstimateAddCard onAdd={addEstimateCard} />
-                    )}
+                    ) : null}
                   </>
                 )}
               </div>
@@ -464,16 +474,15 @@ export function EstimateAcceptedModalContent({
           </Col>
         </Row>
         <div className="flex justify-end gap-3 pt-1">
-          {error ? (
-            <p className="mr-auto self-center text-sm text-red-600">{error}</p>
+          {allowAddResponse ? (
+            <AntButton
+              className="!h-10 !px-6"
+              size="large"
+              onClick={addEstimateCard}
+            >
+              견적추가
+            </AntButton>
           ) : null}
-          <AntButton
-            className="!h-10 !px-6"
-            size="large"
-            onClick={addEstimateCard}
-          >
-            견적추가
-          </AntButton>
           <AntButton
             className="!h-10 !bg-voronoi-orange !px-6 !font-bold"
             size="large"
@@ -490,6 +499,7 @@ export function EstimateAcceptedModalContent({
 
 function EstimateResponseCard({
   draft,
+  editable,
   editing,
   onChange,
   onEdit,
@@ -503,6 +513,7 @@ function EstimateResponseCard({
   validationErrors,
 }: {
   draft: EditableEstimateResponse;
+  editable: boolean;
   editing: boolean;
   onChange: (
     field: keyof EditableEstimateResponse,
@@ -530,16 +541,18 @@ function EstimateResponseCard({
       className="h-full min-h-[520px] w-[340px] max-w-[340px] flex-none bg-gray-100"
       styles={{ body: { overflow: "hidden" } }}
       extra={
-        <AntButton
-          className="!bg-voronoi-orange !text-white"
-          htmlType="button"
-          loading={saving}
-          shape="round"
-          type="primary"
-          onClick={editing ? onSave : onEdit}
-        >
-          {editing ? "완료" : "수정"}
-        </AntButton>
+        editable ? (
+          <AntButton
+            className="!bg-voronoi-orange !text-white"
+            htmlType="button"
+            loading={saving}
+            shape="round"
+            type="primary"
+            onClick={editing ? onSave : onEdit}
+          >
+            {editing ? "완료" : "수정"}
+          </AntButton>
+        ) : null
       }
       title={<span className="text-2xl font-medium text-black">{title}</span>}
     >

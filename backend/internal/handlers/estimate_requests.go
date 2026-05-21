@@ -83,6 +83,10 @@ func (h EstimateRequestHandler) Create(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid request body")
 	}
 	req.ProductName = strings.TrimSpace(req.ProductName)
+	if req.SubStatus != nil {
+		trimmedSubStatus := strings.TrimSpace(*req.SubStatus)
+		req.SubStatus = &trimmedSubStatus
+	}
 	if err := validateEstimateRequestPayload(req, true); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
@@ -103,6 +107,7 @@ func (h EstimateRequestHandler) Create(c echo.Context) error {
 			unit,
 			count,
 			status,
+			sub_status,
 			purchase_request,
 			note,
 			discard
@@ -118,9 +123,10 @@ func (h EstimateRequestHandler) Create(c echo.Context) error {
 			$8::integer,
 			COALESCE($9::integer, 1),
 			$10::text,
-			$11::integer,
-			COALESCE($12::text, ''),
-			COALESCE($13::boolean, false)
+			$11::text,
+			$12::integer,
+			COALESCE($13::text, ''),
+			COALESCE($14::boolean, false)
 		)
 		RETURNING estimate_request_json(eps_estimate_request)
 	`,
@@ -134,6 +140,7 @@ func (h EstimateRequestHandler) Create(c echo.Context) error {
 		req.Unit,
 		req.Count,
 		req.Status,
+		req.SubStatus,
 		req.PurchaseRequest,
 		req.Note,
 		req.Discard,
@@ -158,6 +165,10 @@ func (h EstimateRequestHandler) Update(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid request body")
 	}
 	req.ProductName = strings.TrimSpace(req.ProductName)
+	if req.SubStatus != nil {
+		trimmedSubStatus := strings.TrimSpace(*req.SubStatus)
+		req.SubStatus = &trimmedSubStatus
+	}
 	if err := validateEstimateRequestPayload(req, false); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
@@ -179,9 +190,10 @@ func (h EstimateRequestHandler) Update(c echo.Context) error {
 			unit = COALESCE($9::integer, unit),
 			count = COALESCE($10::integer, count),
 			status = COALESCE($11::text, status),
-			purchase_request = COALESCE($12::integer, purchase_request),
-			note = COALESCE($13::text, note),
-			discard = COALESCE($14::boolean, discard)
+			sub_status = COALESCE($12::text, sub_status),
+			purchase_request = COALESCE($13::integer, purchase_request),
+			note = COALESCE($14::text, note),
+			discard = COALESCE($15::boolean, discard)
 		WHERE id = $1
 		RETURNING estimate_request_json(eps_estimate_request)
 	`,
@@ -196,6 +208,7 @@ func (h EstimateRequestHandler) Update(c echo.Context) error {
 		req.Unit,
 		req.Count,
 		req.Status,
+		req.SubStatus,
 		req.PurchaseRequest,
 		req.Note,
 		req.Discard,
@@ -255,6 +268,13 @@ func validateEstimateRequestPayload(req models.EstimateRequestPayload, requirePr
 	}
 	if req.UnitValue != nil && *req.UnitValue < 0 {
 		return errors.New("unitValue must be greater than or equal to 0")
+	}
+	if req.SubStatus != nil {
+		switch *req.SubStatus {
+		case "", "selecting.approval_pending", "selecting.vendor_selecting", "delivered.payment_pending", "delivered.completed":
+		default:
+			return errors.New("subStatus is invalid")
+		}
 	}
 	return nil
 }

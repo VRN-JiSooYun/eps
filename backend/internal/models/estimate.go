@@ -15,6 +15,7 @@ type EstimateRequest struct {
 	Unit            *int       `json:"unit,omitempty"`
 	Count           *int       `json:"count,omitempty"`
 	Status          string     `json:"status"`
+	SubStatus       *string    `json:"subStatus"`
 	PurchaseRequest *int       `json:"purchaseRequest,omitempty"`
 	Note            *string    `json:"note,omitempty"`
 	Discard         bool       `json:"discard"`
@@ -31,6 +32,7 @@ type EstimateRequestPayload struct {
 	Unit            *int       `json:"unit"`
 	Count           *int       `json:"count"`
 	Status          *string    `json:"status"`
+	SubStatus       *string    `json:"subStatus"`
 	PurchaseRequest *int       `json:"purchaseRequest"`
 	Note            *string    `json:"note"`
 	Discard         *bool      `json:"discard"`

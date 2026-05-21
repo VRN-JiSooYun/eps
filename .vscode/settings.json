@@ -1,0 +1,8 @@
+{
+  "files.exclude": {
+    "backend/internal/web/dist/assets": true
+  },
+  "[bat]": {
+    "files.eol": "\r\n"
+  }
+}

@@ -79,10 +79,13 @@ CREATE TABLE IF NOT EXISTS eps_estimate_request (
 	unit INTEGER REFERENCES unit(id) ON DELETE SET NULL ON UPDATE CASCADE,
 	count INTEGER NOT NULL DEFAULT 1 CHECK (count > 0),
 	status TEXT,
+	sub_status TEXT,
 	purchase_request INTEGER,
 	note TEXT NOT NULL DEFAULT '',
 	discard BOOLEAN NOT NULL DEFAULT false
 );
+
+ALTER TABLE eps_estimate_request ADD COLUMN IF NOT EXISTS sub_status TEXT;
 
 CREATE INDEX IF NOT EXISTS eps_estimate_request_status_idx ON eps_estimate_request(status);
 CREATE INDEX IF NOT EXISTS eps_estimate_request_supplier_id_idx ON eps_estimate_request(supplier_id);
@@ -108,6 +111,7 @@ AS $$
 		'unit', (SELECT u.unit FROM unit u WHERE u.id = r.unit),
 		'count', r.count,
 		'status', r.status,
+		'subStatus', r.sub_status,
 		'purchaseRequest', r.purchase_request,
 		'note', r.note,
 		'discard', r.discard

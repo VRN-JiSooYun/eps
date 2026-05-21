@@ -27,6 +27,15 @@ export type SupplierOption = {
   supplierName: string;
 };
 
+export type EstimateRequestStatus = string | null;
+
+export type EstimateRequestSubStatus =
+  | "selecting.approval_pending"
+  | "selecting.vendor_selecting"
+  | "delivered.payment_pending"
+  | "delivered.completed"
+  | "";
+
 export type EstimateRequest = {
   id: number;
   bid: boolean;
@@ -41,7 +50,8 @@ export type EstimateRequest = {
   unitId: number | null;
   unit: string | number | null;
   count: number;
-  status: string | null;
+  status: EstimateRequestStatus;
+  subStatus: EstimateRequestSubStatus | null;
   purchaseRequest: number | null;
   note: string;
   discard: boolean;
