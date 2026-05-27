@@ -14,6 +14,7 @@ import {
   Checkbox,
   Col,
   Descriptions,
+  Dropdown,
   Form,
   Input,
   InputNumber,
@@ -26,6 +27,7 @@ import {
 import type {
   GetProp,
   InputNumberProps,
+  MenuProps,
   TableColumnsType,
   TableProps,
 } from "antd";
@@ -54,6 +56,7 @@ import {
   formatDateTime,
   toNumericValue,
   formatDeliveryPeriod,
+  formatEstimateRequestSubStatus,
   numberFormatter,
   numberParser,
   formatFileSize,
@@ -63,6 +66,7 @@ import {
   EstimateRequestVendorInfo,
 } from "../../components/estimate/EstimateRequestDescription";
 import { EstimateAcceptedModalContent } from "../../components/estimate/EstimateAcceptedModal";
+import { DeliveryAbandonModal } from "../../components/estimate/DeliveryAbandonModal";
 import { EstimateSelectingModalContent } from "../../components/estimate/EstimateSelectingModal";
 import { EstimateWorkflowModal } from "../../components/estimate/EstimateWorkflowModal";
 
@@ -150,6 +154,16 @@ export function MainPage({
   const pendingCount = pendingRows.length;
   const displayName =
     supplier.contactName || supplier.companyName || supplier.email;
+  const userMenuItems: MenuProps["items"] = [
+    { key: "edit-contact", label: "담당자 정보 수정" },
+    { key: "change-password", label: "비밀번호 변경" },
+    {
+      danger: true,
+      icon: <LogoutOutlined />,
+      key: "logout",
+      label: "로그아웃",
+    },
+  ];
   const sections: SectionConfig[] = [
     {
       count: pendingCount,
@@ -308,16 +322,26 @@ export function MainPage({
               <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-white" />
             ) : null}
           </button>
-          <button
-            className="flex items-center transition-colors hover:text-gray-200"
-            type="button"
-            onClick={onLogout}
-            title="로그아웃"
+          <Dropdown
+            menu={{
+              items: userMenuItems,
+              onClick: ({ key }) => {
+                if (key === "logout") {
+                  onLogout();
+                }
+              },
+            }}
+            placement="bottomRight"
+            trigger={["click"]}
           >
-            <span className="mr-2 font-medium">{displayName}님</span>
-            <DownOutlined className="text-sm" />
-            <LogoutOutlined className="ml-3 text-xl" />
-          </button>
+            <button
+              className="flex items-center transition-colors hover:text-gray-200"
+              type="button"
+            >
+              <span className="mr-2 font-medium">{displayName}님</span>
+              <DownOutlined className="text-sm" />
+            </button>
+          </Dropdown>
         </div>
       </header>
 
@@ -411,6 +435,8 @@ function EstimateRequestSection({
     null,
   );
   const [selectedSelectingDetail, setSelectedSelectingDetail] =
+    useState<EstimateRequest | null>(null);
+  const [selectedDeliveryAbandonRequest, setSelectedDeliveryAbandonRequest] =
     useState<EstimateRequest | null>(null);
   const [responseCountByRequestId, setResponseCountByRequestId] = useState<
     Record<number, number>
@@ -584,12 +610,21 @@ function EstimateRequestSection({
           >
             요청
           </AntButton>
-        ) : (
+        ) : section.type === "delivery_requested" ? (
+          <AntButton
+            className="min-w-20"
+            shape="round"
+            size="small"
+            onClick={() => setSelectedDeliveryAbandonRequest(estimateRequest)}
+          >
+            납품포기
+          </AntButton>
+        ) : section.type === "completed" ? (
           <span className="text-gray-700">
-            {section.type === "completed"
-              ? (responseCountByRequestId[estimateRequest.id] ?? 0)
-              : "-"}
+            {responseCountByRequestId[estimateRequest.id] ?? 0}
           </span>
+        ) : (
+          <SubStatusText request={estimateRequest} sectionType={section.type} />
         ),
       sorter:
         section.type === "completed"
@@ -697,6 +732,13 @@ function EstimateRequestSection({
         }
         title="선정중"
         visible={Boolean(selectedSelectingDetail)}
+      />
+      <DeliveryAbandonModal
+        open={Boolean(selectedDeliveryAbandonRequest)}
+        onClose={() => setSelectedDeliveryAbandonRequest(null)}
+        onSubmit={() => {
+          setSelectedDeliveryAbandonRequest(null);
+        }}
       />
       <AntdModal
         open={Boolean(selectedRequest)}
@@ -1196,11 +1238,41 @@ function createSupplierSelectOptions(
   return options;
 }
 
+function SubStatusText({
+  request,
+  sectionType,
+}: {
+  request: EstimateRequest;
+  sectionType: SectionConfig["type"];
+}) {
+  if (sectionType !== "selecting" && sectionType !== "delivered") {
+    return <span className="text-gray-500">-</span>;
+  }
+
+  const label = formatEstimateRequestSubStatus(request.subStatus);
+  const isEmpty = label === "-";
+
+  return (
+    <span
+      className={
+        isEmpty
+          ? "text-gray-500"
+          : "inline-flex rounded-full bg-[#FCECDD] px-3 py-1 text-xs font-semibold text-[#E75A22]"
+      }
+    >
+      {label}
+    </span>
+  );
+}
+
 function SectionActionLabel({ type }: { type: SectionConfig["type"] }) {
   if (type === "completed") {
     return <>견적개수</>;
   }
-  if (type === "selecting") {
+  if (type === "delivery_requested") {
+    return <>납품포기</>;
+  }
+  if (type === "selecting" || type === "delivered") {
     return (
       <span className="inline-flex items-center justify-center">
         상태

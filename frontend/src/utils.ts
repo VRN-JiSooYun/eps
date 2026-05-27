@@ -1,5 +1,6 @@
 import type {
   EstimateRequest,
+  EstimateRequestSubStatus,
   EstimateResponse,
   EstimateResponseFormValues,
 } from "./types";
@@ -81,6 +82,23 @@ export function formatSupplier(request: EstimateRequest | EstimateResponse) {
     request.supplierName ||
     (request.supplierId ? `Supplier #${request.supplierId}` : "-")
   );
+}
+
+export function formatEstimateRequestSubStatus(
+  subStatus: EstimateRequestSubStatus | null | undefined,
+) {
+  switch (subStatus) {
+    case "selecting.approval_pending":
+      return "승인 대기";
+    case "selecting.vendor_selecting":
+      return "업체 선정중";
+    case "delivered.payment_pending":
+      return "결제 대기";
+    case "delivered.completed":
+      return "거래 완료";
+    default:
+      return "-";
+  }
 }
 
 export function formatUnit(request: EstimateRequest) {
