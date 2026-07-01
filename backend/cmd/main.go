@@ -88,7 +88,7 @@ func main() {
 		e.Any("/*", webProxy.Serve)
 		log.Printf("frontend dev proxy enabled: %s", cfg.FrontendOrigin)
 	} else {
-		webHandler, err := handlers.NewWebHandler(web.Dist)
+		webHandler, err := handlers.NewWebHandler(web.Dist, cfg.WebBasePath, cfg.WebAPIBaseURL)
 		if err != nil {
 			log.Fatalf("load frontend bundle: %v", err)
 		}

@@ -1,8 +1,7 @@
 import type { AuthResponse, EstimateRequest, EstimateResponse, EstimateResponsePayload, EstimateResponseUpdatePayload, LoginPayload, RegisterPayload, SupplierOption, SupplierRegisterPayload, SupplierRegisterResponse } from "./types";
+import { runtimeConfig } from "./runtimeConfig";
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ??
-  `${import.meta.env.BASE_URL.replace(/\/$/, "")}/api`;
+const API_BASE_URL = runtimeConfig.apiBaseUrl;
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${path}`, {

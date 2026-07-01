@@ -18,6 +18,8 @@ type Config struct {
 	LogMaxBackups    int
 	LogMaxAgeDays    int
 	LogCompress      bool
+	WebBasePath      string
+	WebAPIBaseURL    string
 }
 
 func Load() Config {
@@ -34,6 +36,8 @@ func Load() Config {
 		LogMaxBackups:    envInt("LOG_MAX_BACKUPS", 7),
 		LogMaxAgeDays:    envInt("LOG_MAX_AGE_DAYS", 30),
 		LogCompress:      envBool("LOG_COMPRESS", true),
+		WebBasePath:      env("VITE_BASE_PATH", "/"),
+		WebAPIBaseURL:    env("VITE_API_BASE_URL", ""),
 	}
 }
 
