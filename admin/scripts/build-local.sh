@@ -7,6 +7,8 @@ BACKEND_DIR="$ROOT_DIR/backend"
 WEB_DIST_DIR="$BACKEND_DIR/internal/web/dist"
 BIN_DIR="$BACKEND_DIR/bin"
 GOCACHE_DIR="${GOCACHE:-$ROOT_DIR/.cache/go-build}"
+BASE_PATH="${BASE_PATH:-/}"
+VITE_API_BASE_URL="${VITE_API_BASE_URL:-}"
 
 echo "==> Installing frontend dependencies"
 cd "$FRONTEND_DIR"
@@ -18,7 +20,7 @@ echo "==> Testing frontend"
 npm test
 
 echo "==> Building frontend"
-npm run build
+VITE_BASE_PATH="$BASE_PATH" VITE_API_BASE_URL="$VITE_API_BASE_URL" npm run build
 
 echo "==> Copying frontend dist into backend embed directory"
 rm -rf "$WEB_DIST_DIR"
@@ -31,7 +33,7 @@ GOCACHE="$GOCACHE_DIR" go test ./...
 
 echo "==> Building backend binary"
 mkdir -p "$BIN_DIR"
-GOCACHE="$GOCACHE_DIR" go build -o "$BIN_DIR/eps-admin" ./cmd
+GOCACHE="$GOCACHE_DIR" go build -buildvcs=false -o "$BIN_DIR/eps-admin" ./cmd
 
 echo "==> Restoring source placeholder for backend embed directory"
 rm -rf "$WEB_DIST_DIR"

@@ -84,6 +84,8 @@ Production Docker build compiles the React app and embeds `frontend/dist` into t
 
 Docker Compose also starts the admin console on `http://localhost:18080`. Default local credentials are `admin / admin1234`; override `ADMIN_USERNAME`, `ADMIN_PASSWORD`, and `JWT_SECRET` before deployment.
 
+For nginx reverse proxy deployment, admin is configured for `/eps-admin/` through Docker build args `VITE_BASE_PATH=/eps-admin/`, `VITE_API_BASE_URL=/eps-admin/api`, and backend env `BASE_PATH=/eps-admin`.
+
 Admin local development:
 
 ```bash

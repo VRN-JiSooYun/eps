@@ -8,6 +8,7 @@ BACKEND_DIR="$ROOT_DIR/backend"
 PORT="${PORT:-18080}"
 FRONTEND_PORT="${FRONTEND_PORT:-15173}"
 FRONTEND_ORIGIN="${FRONTEND_ORIGIN:-http://localhost:$FRONTEND_PORT}"
+BASE_PATH="${BASE_PATH:-/}"
 DATABASE_URL="${DATABASE_URL:-postgres://eps:eps@localhost:5432/eps?sslmode=disable}"
 JWT_SECRET="${JWT_SECRET:-dev-local-admin}"
 ADMIN_USERNAME="${ADMIN_USERNAME:-admin}"
@@ -48,6 +49,7 @@ trap cleanup EXIT INT TERM
 
 echo "==> Admin frontend: $FRONTEND_ORIGIN"
 echo "==> Admin backend:  http://localhost:$PORT"
+echo "==> Base path:      $BASE_PATH"
 echo "==> Database URL:   $DATABASE_URL"
 echo "==> Login:          $ADMIN_USERNAME / $ADMIN_PASSWORD"
 
@@ -61,7 +63,7 @@ if [ ! -d node_modules ]; then
 fi
 
 echo "==> Starting Vite"
-VITE_API_PROXY_TARGET="http://localhost:$PORT" npm run dev -- --port "$FRONTEND_PORT" &
+VITE_BASE_PATH="$BASE_PATH" VITE_API_PROXY_TARGET="http://localhost:$PORT" npm run dev -- --port "$FRONTEND_PORT" &
 FRONTEND_PID=$!
 
 echo "==> Starting Echo"
@@ -69,6 +71,7 @@ cd "$BACKEND_DIR"
 PORT="$PORT" \
 FRONTEND_ORIGIN="$FRONTEND_ORIGIN" \
 DEV_FRONTEND_PROXY=true \
+BASE_PATH="$BASE_PATH" \
 DATABASE_URL="$DATABASE_URL" \
 JWT_SECRET="$JWT_SECRET" \
 ADMIN_USERNAME="$ADMIN_USERNAME" \

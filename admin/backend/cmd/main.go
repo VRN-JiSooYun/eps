@@ -44,18 +44,10 @@ func main() {
 	admin := handlers.NewAdminHandler(pool)
 	jwtMiddleware := appmiddleware.JWT(cfg.JWTSecret)
 
-	e.GET("/health", handlers.Health)
-
-	api := e.Group("/api")
-	api.POST("/auth/login", auth.Login)
-
-	adminAPI := api.Group("/admin", jwtMiddleware)
-	adminAPI.GET("/tables", admin.Tables)
-	adminAPI.GET("/:table", admin.List)
-	adminAPI.POST("/:table", admin.Create)
-	adminAPI.GET("/:table/:id", admin.Get)
-	adminAPI.PUT("/:table/:id", admin.Update)
-	adminAPI.DELETE("/:table/:id", admin.Delete)
+	registerRoutes(e, "", auth, admin, jwtMiddleware)
+	if cfg.BasePath != "" {
+		registerRoutes(e, cfg.BasePath, auth, admin, jwtMiddleware)
+	}
 
 	if cfg.DevFrontendProxy {
 		proxy, err := handlers.NewDevWebProxy(cfg.FrontendOrigin)
@@ -64,7 +56,7 @@ func main() {
 		}
 		e.Any("/*", proxy.Serve)
 	} else {
-		webHandler, err := handlers.NewWebHandler(web.Dist)
+		webHandler, err := handlers.NewWebHandler(web.Dist, cfg.BasePath)
 		if err != nil {
 			log.Fatalf("load web bundle: %v", err)
 		}
@@ -75,4 +67,19 @@ func main() {
 	if err := e.Start(":" + cfg.Port); err != nil {
 		log.Fatal(err)
 	}
+}
+
+func registerRoutes(e *echo.Echo, prefix string, auth handlers.AuthHandler, admin handlers.AdminHandler, jwtMiddleware echo.MiddlewareFunc) {
+	e.GET(prefix+"/health", handlers.Health)
+
+	api := e.Group(prefix + "/api")
+	api.POST("/auth/login", auth.Login)
+
+	adminAPI := api.Group("/admin", jwtMiddleware)
+	adminAPI.GET("/tables", admin.Tables)
+	adminAPI.GET("/:table", admin.List)
+	adminAPI.POST("/:table", admin.Create)
+	adminAPI.GET("/:table/:id", admin.Get)
+	adminAPI.PUT("/:table/:id", admin.Update)
+	adminAPI.DELETE("/:table/:id", admin.Delete)
 }

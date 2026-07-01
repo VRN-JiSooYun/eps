@@ -44,6 +44,26 @@ Build and test locally:
 ./scripts/build-local.sh
 ```
 
+Build for reverse proxy path `/eps-admin/`:
+
+```bash
+BASE_PATH=/eps-admin VITE_API_BASE_URL=/eps-admin/api ./scripts/build-local.sh
+```
+
+For production behind nginx, build the frontend with `VITE_BASE_PATH=/eps-admin/` and run the backend with `BASE_PATH=/eps-admin`. The app also accepts the same APIs at `/api` for direct local access.
+
+Example nginx location:
+
+```nginx
+location /eps-admin/ {
+    proxy_pass http://127.0.0.1:18080;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+}
+```
+
 Manual backend:
 
 ```bash
@@ -75,6 +95,8 @@ Change these with `ADMIN_USERNAME`, `ADMIN_PASSWORD`, and `JWT_SECRET`.
 ```bash
 docker compose up --build
 ```
+
+The included compose file builds the admin UI for `/eps-admin/` and runs the backend with `BASE_PATH=/eps-admin`.
 
 ## API
 

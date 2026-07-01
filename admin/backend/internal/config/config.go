@@ -13,6 +13,7 @@ type Config struct {
 	AdminPassword    string
 	FrontendOrigin   string
 	DevFrontendProxy bool
+	BasePath         string
 }
 
 func Load() Config {
@@ -24,6 +25,7 @@ func Load() Config {
 		AdminPassword:    env("ADMIN_PASSWORD", "admin1234"),
 		FrontendOrigin:   env("FRONTEND_ORIGIN", "http://localhost:5173"),
 		DevFrontendProxy: envBool("DEV_FRONTEND_PROXY", false),
+		BasePath:         normalizeBasePath(env("BASE_PATH", env("VITE_BASE_PATH", "/"))),
 	}
 }
 
@@ -45,4 +47,21 @@ func envBool(key string, fallback bool) bool {
 		return fallback
 	}
 	return parsed
+}
+
+func normalizeBasePath(value string) string {
+	if value == "" || value == "/" {
+		return ""
+	}
+	trimmed := value
+	for len(trimmed) > 0 && trimmed[0] == '/' {
+		trimmed = trimmed[1:]
+	}
+	for len(trimmed) > 0 && trimmed[len(trimmed)-1] == '/' {
+		trimmed = trimmed[:len(trimmed)-1]
+	}
+	if trimmed == "" {
+		return ""
+	}
+	return "/" + trimmed
 }

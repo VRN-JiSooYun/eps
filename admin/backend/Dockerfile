@@ -3,6 +3,10 @@ WORKDIR /app/frontend
 COPY frontend/package*.json ./
 RUN npm install
 COPY frontend ./
+ARG VITE_BASE_PATH=/
+ARG VITE_API_BASE_URL=
+ENV VITE_BASE_PATH=$VITE_BASE_PATH
+ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 RUN npm run build
 
 FROM golang:1.23-alpine AS backend

@@ -56,6 +56,29 @@ interface LoginResponse {
   username: string;
 }
 
+const API_BASE_URL = normalizeBaseURL(
+  import.meta.env.VITE_API_BASE_URL || `${trimTrailingSlash(import.meta.env.BASE_URL || "")}/api`
+);
+
+function trimTrailingSlash(value: string) {
+  if (value === "" || value === "/") {
+    return "";
+  }
+  return value.replace(/\/+$/, "");
+}
+
+function normalizeBaseURL(value: string) {
+  const trimmed = trimTrailingSlash(value.trim());
+  if (!trimmed) {
+    return "/api";
+  }
+  return trimmed.startsWith("/") || /^https?:\/\//.test(trimmed) ? trimmed : `/${trimmed}`;
+}
+
+function apiPath(path: string) {
+  return `${API_BASE_URL}${path.startsWith("/") ? path : `/${path}`}`;
+}
+
 function tokenStore() {
   return localStorage.getItem("eps-admin-token") ?? "";
 }
@@ -175,7 +198,7 @@ function Login({ onLogin }: { onLogin: (response: LoginResponse) => void }) {
   const submit = async (values: { username: string; password: string }) => {
     setLoading(true);
     try {
-      const response = await request<LoginResponse>("/api/auth/login", {
+      const response = await request<LoginResponse>(apiPath("/auth/login"), {
         method: "POST",
         body: JSON.stringify(values)
       });
@@ -233,7 +256,7 @@ function Console({ onLogout }: { onLogout: () => void }) {
   const activeTable = useMemo(() => tables.find((table) => table.name === activeName), [tables, activeName]);
 
   const loadTables = useCallback(async () => {
-    const response = await request<{ tables: TableMeta[] }>("/api/admin/tables");
+    const response = await request<{ tables: TableMeta[] }>(apiPath("/admin/tables"));
     setTables(response.tables);
     setActiveName((current) => current || response.tables[0]?.name || "");
   }, []);
@@ -250,7 +273,7 @@ function Console({ onLogout }: { onLogout: () => void }) {
         includeDeleted: String(includeDeleted),
         q: query
       });
-      const response = await request<{ rows: RowData[]; total: number }>(`/api/admin/${activeTable.name}?${params}`);
+      const response = await request<{ rows: RowData[]; total: number }>(apiPath(`/admin/${activeTable.name}?${params}`));
       setRows(response.rows);
       setTotal(response.total);
     } catch (error) {
@@ -323,7 +346,7 @@ function Console({ onLogout }: { onLogout: () => void }) {
     setSaving(true);
     try {
       const payload = normalizePayload(activeTable, values);
-      const path = editingRow ? `/api/admin/${activeTable.name}/${rowKey(activeTable, editingRow)}` : `/api/admin/${activeTable.name}`;
+      const path = editingRow ? apiPath(`/admin/${activeTable.name}/${rowKey(activeTable, editingRow)}`) : apiPath(`/admin/${activeTable.name}`);
       await request(path, {
         method: editingRow ? "PUT" : "POST",
         body: JSON.stringify(payload)
@@ -347,7 +370,7 @@ function Console({ onLogout }: { onLogout: () => void }) {
       content: activeTable.softDelete ? "This row will be marked as discarded." : "This row will be permanently deleted.",
       okButtonProps: { danger: true },
       onOk: async () => {
-        await request(`/api/admin/${activeTable.name}/${rowKey(activeTable, row)}`, { method: "DELETE" });
+        await request(apiPath(`/admin/${activeTable.name}/${rowKey(activeTable, row)}`), { method: "DELETE" });
         message.success("Deleted");
         await loadRows();
       }

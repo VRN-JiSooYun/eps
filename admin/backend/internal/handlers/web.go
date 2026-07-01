@@ -13,19 +13,24 @@ import (
 )
 
 type WebHandler struct {
-	files http.FileSystem
+	files    http.FileSystem
+	basePath string
 }
 
-func NewWebHandler(dist embed.FS) (WebHandler, error) {
+func NewWebHandler(dist embed.FS, basePath string) (WebHandler, error) {
 	sub, err := fs.Sub(dist, "dist")
 	if err != nil {
 		return WebHandler{}, err
 	}
-	return WebHandler{files: http.FS(sub)}, nil
+	return WebHandler{files: http.FS(sub), basePath: normalizeWebBasePath(basePath)}, nil
 }
 
 func (h WebHandler) Serve(c echo.Context) error {
 	requestPath := strings.TrimPrefix(c.Request().URL.Path, "/")
+	if h.basePath != "" {
+		requestPath = strings.TrimPrefix(c.Request().URL.Path, h.basePath)
+		requestPath = strings.TrimPrefix(requestPath, "/")
+	}
 	if requestPath == "" {
 		requestPath = "index.html"
 	}
@@ -34,6 +39,13 @@ func (h WebHandler) Serve(c echo.Context) error {
 	}
 	c.Request().URL.Path = "/index.html"
 	return echo.WrapHandler(http.FileServer(h.files))(c)
+}
+
+func normalizeWebBasePath(value string) string {
+	if value == "" || value == "/" {
+		return ""
+	}
+	return "/" + strings.Trim(value, "/")
 }
 
 type DevWebProxy struct {
