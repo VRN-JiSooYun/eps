@@ -1,0 +1,27 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background: #eef2f7;
+  color: #1f2937;
+}
+
+.ant-layout-sider-trigger {
+  border-top: 1px solid #d7dde8;
+}
+
+.admin-table .ant-table-cell {
+  white-space: nowrap;
+}
+
+.ant-layout-header {
+  line-height: normal;
+}

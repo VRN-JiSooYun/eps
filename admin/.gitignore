@@ -1,0 +1,13 @@
+.DS_Store
+.cache/
+
+backend/bin/
+backend/logs/
+backend/internal/web/dist/*
+!backend/internal/web/dist/index.html
+
+frontend/dist/
+frontend/node_modules/
+frontend/*.tsbuildinfo
+frontend/vite.config.js
+frontend/vite.config.d.ts
