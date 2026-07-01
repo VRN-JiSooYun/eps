@@ -661,6 +661,7 @@ function EstimateRequestSection({
           size="small"
           rowKey="id"
           scroll={{ x: 1040 }}
+          showSorterTooltip={false}
         />
       </div>
       <EstimateWorkflowModal
