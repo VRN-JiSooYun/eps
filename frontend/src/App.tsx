@@ -16,6 +16,11 @@ import TestPage from "./pages/Test";
 const tokenKey = "eps.auth.token";
 const supplierKey = "eps.auth.supplier";
 const rememberedEmailKey = "eps.auth.rememberedEmail";
+const routerBasename =
+  import.meta.env.BASE_URL === "/"
+    ? "/"
+    : import.meta.env.BASE_URL.replace(/\/$/, "");
+const assetBaseUrl = import.meta.env.BASE_URL;
 
 export function App() {
   return (
@@ -34,7 +39,7 @@ export function App() {
         },
       }}
     >
-      <BrowserRouter>
+      <BrowserRouter basename={routerBasename}>
         <AppRoutes />
       </BrowserRouter>
     </ConfigProvider>
@@ -180,7 +185,10 @@ function AuthPanel({
         <div className="w-full max-w-md">
           <header className="mb-10">
             <div className="mb-8">
-              <img className="h-14" src="/logos/1_vrn_ci.png"></img>
+              <img
+                className="h-14"
+                src={`${assetBaseUrl}logos/1_vrn_ci.png`}
+              ></img>
             </div>
             <h1 className="mb-2 text-4xl font-normal tracking-normal text-black">
               Login
@@ -266,7 +274,7 @@ function AuthPanel({
         <div className="absolute right-8 top-12 z-10 flex items-center gap-3 xl:right-12">
           <img
             className="h-12 brightness-0 invert"
-            src="/logos/1_vrn_logo_orange.png"
+            src={`${assetBaseUrl}logos/1_vrn_logo_orange.png`}
           />
         </div>
       </section>

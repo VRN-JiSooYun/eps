@@ -4,7 +4,9 @@ WORKDIR /frontend
 COPY frontend/package.json frontend/package-lock.json* ./
 RUN npm install
 COPY frontend ./
-RUN VITE_API_BASE_URL=/api npm run build
+ARG VITE_BASE_PATH=/
+ARG VITE_API_BASE_URL=/api
+RUN VITE_BASE_PATH=$VITE_BASE_PATH VITE_API_BASE_URL=$VITE_API_BASE_URL npm run build
 
 FROM golang:1.23-alpine AS builder
 

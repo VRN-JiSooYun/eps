@@ -70,6 +70,8 @@ import { DeliveryAbandonModal } from "../../components/estimate/DeliveryAbandonM
 import { EstimateSelectingModalContent } from "../../components/estimate/EstimateSelectingModal";
 import { EstimateWorkflowModal } from "../../components/estimate/EstimateWorkflowModal";
 
+const assetBaseUrl = import.meta.env.BASE_URL;
+
 type MainPageProps = {
   loading: boolean;
   message: string;
@@ -302,7 +304,7 @@ export function MainPage({
           <div className="flex items-center text-2xl font-bold tracking-normal">
             <img
               className="h-8 mr-2 brightness-0 invert"
-              src="/logos/1_vrn_logo_orange.png"
+              src={`${assetBaseUrl}logos/1_vrn_logo_orange.png`}
               alt="VORONOI Logo"
             />
             <span className="mx-3 font-light">X</span>
